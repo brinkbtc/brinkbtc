@@ -148,6 +148,21 @@ h1,h2,h3{text-wrap:balance;margin:0}
 .reopen{border-top:1px solid var(--rule);padding-top:12px;display:flex;flex-direction:column;gap:8px}
 .row-inline{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
 .row-inline .fld{width:200px}
+.qn{align-self:flex-start;background:none;border:1px solid var(--rule);border-radius:var(--r);padding:5px 8px;font:500 11px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);cursor:pointer}
+.qn:hover{border-color:var(--ink);color:var(--ink)}
+.week{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;font-size:14px}
+.week .wl{font:500 13px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin-right:4px}
+.week button{background:var(--wash);border:0;border-radius:var(--r);padding:6px 10px;cursor:pointer;text-align:left;font-variant-numeric:tabular-nums}
+.week button:hover{background:var(--wash-2)}
+.week b{font-weight:600}
+.privacy{font-size:13px;line-height:1.4;padding:10px 12px;border:1px solid var(--rule);color:var(--ink-2);margin:0}
+.paid{color:var(--ok);font-weight:600}
+.warnline{color:var(--warn);font-weight:600;font-size:14px;margin:0}
+.qrow{display:grid;grid-template-columns:76px 1fr auto;gap:2px 12px;padding:10px 0;border-top:1px solid var(--rule);font-variant-numeric:tabular-nums;align-items:baseline}
+.qrow .qa{text-align:right;font-weight:600}
+.qrow .qx{grid-column:2 / span 2;font-size:13px;color:var(--mute)}
+.qrow .qd{font-size:13px;color:var(--mute)}
+textarea.brief{min-height:300px;font-size:15px}
 
 .sess{display:flex;flex-direction:column;gap:10px}
 .s-item{border-top:1px solid var(--rule);padding-top:12px;display:grid;grid-template-columns:64px 1fr;gap:4px 14px}
@@ -203,6 +218,7 @@ dialog::backdrop{background:var(--scrim)}
   .steps span{display:none}
   .search{width:100%}
   .tools{margin-left:0;width:100%}
+  .mo{grid-template-columns:1fr}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -212,10 +228,12 @@ dialog::backdrop{background:var(--scrim)}
     <div class="brand">
       <div class="logo" aria-label="brink">br<b>!</b>nk <span style="font-weight:400;color:var(--mute)">fokus<b>M</b>ensch</span></div>
       <h1>Coaching Board</h1>
-      <div class="motto">Vom ersten Anruf bis zum Nachklang. Haltung vor Methode.</div>
+      <div class="motto">Vom ersten Anruf bis zum Abschluss. Haltung vor Methode.</div>
     </div>
     <div class="actions">
       <span class="save" id="save" aria-live="polite"></span>
+      <button class="btn ghost" data-act="journal" type="button">Journal</button>
+      <button class="btn ghost" data-act="quartal" type="button">Quartal</button>
       <button class="btn red" id="btn-new" type="button">+ Neuer Klient</button>
     </div>
   </header>
@@ -233,6 +251,7 @@ dialog::backdrop{background:var(--scrim)}
   </section>
 
   <div id="banner"></div>
+  <div id="week"></div>
   <div id="main"></div>
 </div>
 
@@ -257,6 +276,31 @@ dialog::backdrop{background:var(--scrim)}
   </form>
 </dialog>
 
+<dialog id="dlg-quick" aria-labelledby="dlg-quick-h">
+  <form class="dlg" id="form-quick" method="dialog">
+    <h2 id="dlg-quick-h">Schnellnotiz</h2>
+    <p class="hint" id="q-who"></p>
+    <div class="grid2">
+      <div class="fld"><label for="q-datum">Datum</label><input id="q-datum" type="date"></div>
+      <div class="fld"><label for="q-art">Art</label><select id="q-art"><option>Sitzung</option><option>Follow-up</option><option>Ausfall</option></select></div>
+      <div class="fld"><label for="q-skala">Skala (0–10)</label><input id="q-skala" type="number" min="0" max="10" step="0.5"></div>
+    </div>
+    <div class="fld"><label for="q-thema">Thema</label><input id="q-thema" placeholder="Worum ging es wirklich?"></div>
+    <div class="fld"><label for="q-aha">Aha-Moment</label><textarea id="q-aha" placeholder="Der Satz, bei dem es klick gemacht hat"></textarea></div>
+    <div class="fld"><label for="q-transfer">Vereinbarung bis zum nächsten Mal</label><input id="q-transfer" placeholder="Was probiert sie im Alltag aus?"></div>
+    <div class="row"><button class="btn ghost" type="button" id="q-cancel">Abbrechen</button><button class="btn red" type="submit">Speichern</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-text" aria-labelledby="dlg-text-h">
+  <div class="dlg">
+    <h2 id="dlg-text-h">Text kopieren</h2>
+    <p class="hint">Diese Ansicht erlaubt kein automatisches Kopieren. Der Text ist markiert: Kopiere ihn mit Strg+C oder ⌘+C.</p>
+    <div class="fld"><label for="t-text">Text</label><textarea id="t-text" class="brief" readonly></textarea></div>
+    <div class="row"><button class="btn" type="button" id="t-close">Schließen</button></div>
+  </div>
+</dialog>
+
 <script>
 (function(){
 "use strict";
@@ -276,23 +320,27 @@ const PHASES=[
   checks:[["doku","Jede Sitzung kurz dokumentiert"],["transfer","Transferaufgaben nachgehalten"],["halbzeit","Zwischenbilanz zur Halbzeit gezogen"],["auftrag_ok","Auftrag noch stimmig? Bei Bedarf neu kontrahiert"]],
   fragen:["Arbeiten wir noch am vereinbarten Auftrag oder am Thema hinter dem Thema?","Wo übernehme ich gerade mehr Verantwortung als sie?","Welche Stärke hat sie seit dem letzten Mal gezeigt, ohne es selbst zu merken?"]},
  {n:5,name:"Abschluss",sub:"Ziel erreicht? Bilanz ziehen",
-  checks:[["ziel_erreicht","Klient sagt selbst: Mein Ziel ist erreicht"],["abgleich","Zielbild mit dem Ist abgeglichen"],["skala_end","Abschlusswert auf der Skala erhoben"],["mitnehmen","Erkenntnisse gesichert: Was nehme ich mit?"],["ag_abschluss","Abschluss mit dem Auftraggeber geführt (falls Dreieck)"],["feedback","Feedback zum Prozess eingeholt"],["rechnung","Rechnung gestellt"]],
+  checks:[["ziel_erreicht","Klient sagt selbst: Mein Ziel ist erreicht"],["abgleich","Zielbild mit dem Ist abgeglichen"],["skala_end","Abschlusswert auf der Skala erhoben"],["mitnehmen","Erkenntnisse gesichert: Was nehme ich mit?"],["brief","Abschlussbrief übergeben (Reiter Entwicklung)"],["ag_abschluss","Abschluss mit dem Auftraggeber geführt (falls Dreieck)"],["feedback","Feedback zum Prozess eingeholt"],["rechnung","Rechnung gestellt"]],
   fragen:["Wer erklärt das Ziel für erreicht: sie selbst oder ihr Kontingent?","Was hat sie selbst bewirkt, und wie machen wir das sichtbar?","Woran wird sie in drei Monaten merken, dass es noch wirkt?"]},
- {n:6,name:"Abgeschlossen",sub:"Ziel erreicht, die Tür bleibt offen",
+ {n:6,name:"Abgeschlossen",sub:"Ausgang festhalten, die Tür bleibt offen",
   checks:[["tuer","Follow-up angesprochen: Sie kann jederzeit wieder buchen"],["stimme","Stimme für die Website angefragt (mit Einverständnis)"],["loeschen","Unterlagen nach Frist gelöscht oder archiviert"]],
   fragen:["Was habe ich in diesem Prozess über mich als Coach gelernt?","Woran würde sie merken, dass es Zeit für ein Follow-up ist?","Was würde ich beim nächsten Mal früher ansprechen?"]}
 ];
 const METHODEN=["Skalierungsfrage","Inneres Team","Werte- und Entwicklungsquadrat","Kommunikationsquadrat","Riemann-Thomann-Kreuz","Reiss Motivation Profile","Systemische Aufstellung","Zirkuläre Fragen","Wunderfrage","Ressourcenarbeit","TZI: Ich-Wir-Es-Globe","Rollenspiel / Probehandeln","Arbeit am Glaubenssatz","Freies Gespräch"];
 const MOTIVE=[["Macht","Einfluss, Verantwortung, führen"],["Unabhängigkeit","Selbstständigkeit, Freiraum"],["Neugier","Wissen, Verstehen, Lernen"],["Anerkennung","Bestätigung, dazugehören"],["Ordnung","Struktur, Planung, Stabilität"],["Sparen","Sammeln, Ressourcen bewahren"],["Ehre","Prinzipien, Loyalität, Tradition"],["Idealismus","Fairness, Gerechtigkeit, Sinn"],["Beziehungen","Kontakt, Geselligkeit"],["Familie","Fürsorge, eigene Familie"],["Status","Ansehen, Exklusivität"],["Rache","Wettbewerb, Kampf, sich durchsetzen"],["Schönheit","Ästhetik, Sinnlichkeit"],["Essen","Genuss, Kulinarik"],["Körperliche Aktivität","Bewegung, Fitness"],["Ruhe","Entspannung, Sicherheit"]];
-const STUFEN=[["niedrig","niedrig"],["mittel","mittel"],["hoch","hoch"]];
+const STUFEN=[["niedrig","weniger wichtig"],["mittel","situativ"],["hoch","sehr wichtig"]];
+const AUSGAENGE=[["ziel","Ziel erreicht"],["kein-auftrag","Kein Auftrag zustande gekommen"],["uebergeben","Übergeben (z. B. Therapie, andere Beratung)"],["vorzeitig","Vorzeitig beendet"]];
+const ausgangLabel=k=>(AUSGAENGE.find(a=>a[0]===k)||AUSGAENGE[0])[1];
+const IMPULSE=["Welches Muster begegnet mir diese Woche zum zweiten Mal?","Bei wem habe ich gerade mehr Energie als der Klient selbst?","Wo habe ich zuletzt eine Methode benutzt, um einer Begegnung auszuweichen?","Welche Klientin erinnert mich an jemanden, und was macht das mit mir?"];
 
 /* ---------- Zustand ---------- */
-const S={docs:new Map(),open:null,tab:"ueberblick",q:"",onlyFlags:false,loaded:false,offline:false,stale:false,canWrite:true,confirmDel:false,confirmSess:null,confirmEx:false};
-let col=null;
+const S={docs:new Map(),open:null,panel:null,tab:"ueberblick",q:"",onlyFlags:false,loaded:false,offline:false,stale:false,canWrite:true,confirmDel:false,confirmSess:null,confirmEx:false,confirmEnd:false,qOff:0,journal:[],quickId:null};
+let col=null,jcol=null;
 const dirty=new Set(),writing=new Set(),timers=new Map();
 const $=s=>document.querySelector(s);
 const esc=v=>String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const todayISO=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const isoD=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const todayISO=()=>isoD(new Date());
 const dayStart=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x};
 const daysFrom=iso=>iso?Math.round((dayStart(iso)-dayStart(new Date()))/864e5):null;
 const fmtDay=iso=>{if(!iso)return"";const d=new Date(iso);if(isNaN(d))return"";return d.toLocaleDateString("de-DE",{weekday:"short",day:"numeric",month:"short"})};
@@ -303,21 +351,40 @@ const sessions=d=>(d.sitzungen||[]).slice().sort((a,b)=>(a.datum||"").localeComp
 const phaseOf=d=>Math.min(6,Math.max(1,+d.phase||1));
 const isDreieck=d=>!!(d.auftraggeber&&!/selbst/i.test(d.auftraggeber));
 const nextAG=d=>(d.agTermine||[]).filter(t=>daysFrom(t.datum)>=0).sort((a,b)=>a.datum.localeCompare(b.datum))[0];
-const eur=n=>(+n||0).toLocaleString("de-DE",{style:"currency",currency:"EUR",minimumFractionDigits:0,maximumFractionDigits:2});
+const eur=n=>{const v=Math.round((+n||0)*100)/100;return v.toLocaleString("de-DE",{style:"currency",currency:"EUR",minimumFractionDigits:v%1?2:0,maximumFractionDigits:2})};
 const quarterStart=()=>{const n=new Date();return new Date(n.getFullYear(),Math.floor(n.getMonth()/3)*3,1)};
 const quarterEnd=()=>{const n=new Date(),e=new Date(n.getFullYear(),Math.floor(n.getMonth()/3)*3+3,0);return e.getFullYear()+"-"+String(e.getMonth()+1).padStart(2,"0")+"-"+String(e.getDate()).padStart(2,"0")};
+const held=d=>sessions(d).filter(s=>s.art!=="Ausfall");
+const brutto=r=>(+r.betrag||0)*(1+(+r.ust||0)/100);
+function quarterRange(off){const n=new Date(),q=Math.floor(n.getMonth()/3)+off,s=new Date(n.getFullYear(),q*3,1),e=new Date(n.getFullYear(),q*3+3,0);return {s,e,label:"Q"+(Math.floor(s.getMonth()/3)+1)+" "+s.getFullYear()}}
+function allInvoices(){const out=[];S.docs.forEach(d=>(d.rechnungen||[]).forEach(r=>out.push({r,d})));return out}
+/* Vorschlag: höchste bisherige Nummer mit gleichem Präfix plus eins, über alle Klienten */
+function nextNummer(){
+  const all=allInvoices().map(x=>x.r).filter(r=>r.nummer);
+  if(!all.length)return new Date().getFullYear()+"-001";
+  all.sort((a,b)=>(a.datum||"").localeCompare(b.datum||"")||a.nummer.localeCompare(b.nummer,undefined,{numeric:true}));
+  const m=all[all.length-1].nummer.match(/^(.*?)(\d+)$/);if(!m)return "";
+  let max=0;all.forEach(r=>{const x=r.nummer.match(/^(.*?)(\d+)$/);if(x&&x[1]===m[1])max=Math.max(max,+x[2])});
+  return m[1]+String(max+1).padStart(m[2].length,"0");
+}
+function nummerLuecken(){
+  const by={};allInvoices().forEach(({r})=>{const x=(r.nummer||"").match(/^(.*?)(\d+)$/);if(x)(by[x[1]]=by[x[1]]||[]).push({n:+x[2],w:x[2].length})});
+  const gaps=[];Object.entries(by).forEach(([p,l])=>{const ns=new Set(l.map(o=>o.n)),lo=Math.min(...ns),hi=Math.max(...ns),w=l[0].w;for(let i=lo;i<=hi&&gaps.length<10;i++)if(!ns.has(i))gaps.push(p+String(i).padStart(w,"0"))});
+  return gaps;
+}
+function lastUst(){const l=allInvoices().map(x=>x.r).filter(r=>r.ust!=null).sort((a,b)=>(a.datum||"").localeCompare(b.datum||""));return l.length?+l[l.length-1].ust:19}
 /* Was ist geleistet bzw. gebucht, aber noch nicht in Rechnung gestellt? */
 function offen(d){
   const a=d.abrechnung||{},items=[];
   if(a.modell==="paket")(d.pakete||[]).forEach(k=>{if(!k.rechnung)items.push({kind:"paket",id:k.id,datum:k.gebucht,label:"Paket mit "+k.termine+" Terminen",betrag:+k.preis||0})});
-  else if(a.modell==="einzeln"){const satz=+a.satz||0;sessions(d).forEach((s,i)=>{if(!s.rechnung&&(s.datum||"")<=todayISO())items.push({kind:"sitzung",id:s.id,datum:s.datum,label:(s.art==="Follow-up"?"Follow-up":"Sitzung")+" S"+(i+1)+" am "+fmtShort(s.datum),betrag:satz})})}
+  else if(a.modell==="einzeln"){const satz=+a.satz||0,ausf=a.ausfall===""||a.ausfall==null?satz:+a.ausfall;let k=0;sessions(d).forEach(s=>{const aus=s.art==="Ausfall";if(!aus)k++;if(!s.rechnung&&(s.datum||"")<=todayISO())items.push({kind:"sitzung",id:s.id,datum:s.datum,label:aus?"Ausfallhonorar am "+fmtShort(s.datum):(s.art==="Follow-up"?"Follow-up":"Sitzung")+" S"+k+" am "+fmtShort(s.datum),betrag:aus?ausf:satz})})}
   const qs=quarterStart();
   return {items,sum:items.reduce((x,y)=>x+y.betrag,0),alt:items.some(x=>x.datum&&new Date(x.datum)<qs)};
 }
 
 /* ---------- Handlungsbedarf ---------- */
 function flags(d){
-  const f=[],p=phaseOf(d),c=d.checks||{},ss=sessions(d),plan=+d.sitzungenPlan||0;
+  const f=[],p=phaseOf(d),c=d.checks||{},ss=held(d),plan=+d.sitzungenPlan||0;
   const nt=d.naechsterTermin, nd=daysFrom(nt);
   if(nt&&nd<0&&p<6) f.push({w:1,t:"Termin vorbei: nachtragen"});
   else if(nt&&nd===0) f.push({w:0,t:"Heute"+(nt.length>10?", "+new Date(nt).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):"")});
@@ -326,7 +393,7 @@ function flags(d){
   if(p===2&&c.angebot&&!d.naechsterTermin){const s=daysFrom((d.phaseSeit||{})[2]);if(s!==null&&s<=-7)f.push({w:1,t:"Angebot nachfassen"})}
   if(p===4){
     if(ss.length){const l=daysFrom(ss[ss.length-1].datum);if(l!==null&&l<=-35&&!nt)f.push({w:1,t:"Lange Pause: "+(-l)+" Tage"})}
-    if(plan&&ss.length>=plan)f.push({w:1,t:"Kontingent erreicht: Abschluss planen"});
+    if(plan&&ss.length>=plan)f.push({w:0,t:"Kontingent aufgebraucht: nachbuchen oder Abschluss besprechen"});
     else if(plan&&ss.length>=Math.ceil(plan/2)&&!c.halbzeit)f.push({w:0,t:"Zeit für die Zwischenbilanz"});
   }
   const ag=d.agTermine||[];
@@ -338,6 +405,8 @@ function flags(d){
     if(o.alt)f.push({w:1,t:"Rechnung überfällig (Vorquartal): "+eur(o.sum)});
     else if(daysFrom(quarterEnd())<=14)f.push({w:1,t:"Rechnung bis "+fmtShort(quarterEnd())+": "+eur(o.sum)});
   }
+  const unpaid=(d.rechnungen||[]).filter(r=>!r.bezahlt&&daysFrom(r.datum)<=-30);
+  if(unpaid.length)f.push({w:1,t:"Zahlung offen: "+eur(unpaid.reduce((x,r)=>x+brutto(r),0))});
   return f;
 }
 
@@ -382,7 +451,7 @@ function renderPulse(){
   const now=new Date(),m=now.getMonth(),y=now.getFullYear();
   $("#k-aktiv").textContent=all.filter(d=>[3,4,5].includes(phaseOf(d))).length;
   $("#k-anfr").textContent=all.filter(d=>[1,2].includes(phaseOf(d))).length;
-  let n=0;all.forEach(d=>(d.sitzungen||[]).forEach(s=>{const t=new Date(s.datum);if(t.getMonth()===m&&t.getFullYear()===y)n++}));
+  let n=0;all.forEach(d=>(d.sitzungen||[]).forEach(s=>{const t=new Date(s.datum);if(s.art!=="Ausfall"&&t.getMonth()===m&&t.getFullYear()===y)n++}));
   $("#k-sitz").textContent=n;
   $("#k-sitz-l").textContent=(n===1?"Sitzung":"Sitzungen")+" im "+now.toLocaleDateString("de-DE",{month:"long"});
   $("#k-flag").textContent=all.filter(d=>flags(d).some(f=>f.w)).length;
@@ -395,6 +464,17 @@ function renderPulse(){
       ?`<div class="notice"><span>${ex} Beispielklienten endgültig entfernen?</span><button class="btn small red" data-act="ex-yes">Ja, entfernen</button><button class="btn small ghost" data-act="ex-no">Abbrechen</button></div>`
       :`<div class="notice"><span>Das Board zeigt ${ex} erfundene Beispielklienten, damit du siehst, wie es arbeitet. Sie sind mit <span class="tag">Beispiel</span> markiert.</span>${S.canWrite?`<button class="linkish" data-act="ex-ask">Beispiele entfernen</button>`:""}</div>`;
   }else b.innerHTML=S.stale?`<div class="notice">Der Speicher antwortet gerade nicht. Was du siehst, ist eventuell nicht aktuell.</div>`:"";
+  renderWeek();
+}
+function renderWeek(){
+  const el=$("#week");if(!S.loaded||!S.docs.size){el.innerHTML="";return}
+  const items=[],inWeek=dt=>{const k=daysFrom(dt);return k!==null&&k>=0&&k<=7};
+  S.docs.forEach(d=>{
+    if(phaseOf(d)<6&&d.naechsterTermin&&inWeek(d.naechsterTermin))items.push({dt:d.naechsterTermin,id:d.id,t:d.name});
+    (d.agTermine||[]).forEach(t=>{if(t.datum&&inWeek(t.datum))items.push({dt:t.datum,id:d.id,t:d.name,ag:1})});
+  });
+  items.sort((a,b)=>a.dt.localeCompare(b.dt));
+  el.innerHTML=`<div class="week"><span class="wl">Nächste 7 Tage</span>${items.length?items.map(i=>`<button type="button" data-open="${esc(i.id)}"><b>${esc(fmtDT(i.dt))}</b> · ${esc(i.t||"Ohne Namen")}${i.ag?" mit Auftraggeber":""}</button>`).join(""):`<span class="hint">Keine Termine eingetragen.</span>`}</div>`;
 }
 
 /* ---------- Board ---------- */
@@ -412,17 +492,20 @@ function card(d){
   const agN=nextAG(d);if(agN&&p<6)meta+=`<span>Auftraggeber: ${esc(fmtDT(agN.datum))}</span>`;
   const wa=d.wiederaufnahmen||[];
   if(p===6&&(d.phaseSeit||{})[6])meta+=`<span>Abgeschlossen ${esc(fmtShort(d.phaseSeit[6]))}${wa.length?` · ${wa.length}× Follow-up gebucht`:""}</span>`;
-  if(p>=4&&p<=5&&plan){let pips="";for(let i=0;i<plan;i++)pips+=`<i class="${i<ss.length?"on":""}"></i>`;meta+=`<span><span class="pips" aria-hidden="true">${pips}</span> ${ss.length}/${plan}</span>`}
+  const ah=held(d).length;
+  if(p>=4&&p<=5&&plan){let pips="";for(let i=0;i<plan;i++)pips+=`<i class="${i<ah?"on":""}"></i>`;meta+=`<span><span class="pips" aria-hidden="true">${pips}</span> ${ah}/${plan}</span>`}
+  if(p===6&&d.ausgang&&d.ausgang!=="ziel")meta+=`<span>${esc(ausgangLabel(d.ausgang))}</span>`;
   if(p>=3&&last)meta+=`<span>Skala ${esc(last.skala)}/10</span>`;
   if(p===1&&d.quelle)meta+=`<span>${esc(d.quelle)}</span>`;
   const of=offen(d);if(of.items.length&&of.sum)meta+=`<span>Offen: ${esc(eur(of.sum))}</span>`;
-  return `<button class="card${S.open===d.id?" sel":""}" data-open="${esc(d.id)}" draggable="${S.canWrite}" type="button">
+  return `<div class="card${S.open===d.id?" sel":""}" data-open="${esc(d.id)}" draggable="${S.canWrite}" role="button" tabindex="0">
     <span class="nm">${esc(d.name||"Ohne Namen")}${wa.length&&p<6?` <span class="tag">Follow-up</span>`:""}${d.beispiel?` <span class="tag">Beispiel</span>`:""}</span>
     ${d.rolle||d.organisation?`<span class="ro">${esc([d.rolle,d.organisation].filter(Boolean).join(" · "))}</span>`:""}
     ${d.anliegen?`<span class="an">${esc(d.anliegen)}</span>`:""}
     ${fl.map(f=>`<span class="flag${f.w?"":" info"}">${esc(f.t)}</span>`).join("")}
     ${meta?`<span class="meta">${meta}</span>`:""}
-  </button>`;
+    ${S.canWrite&&p>=3&&p<=5?`<button class="qn" type="button" data-quick="${esc(d.id)}">+ Schnellnotiz</button>`:""}
+  </div>`;
 }
 function renderBoard(){
   const main=$("#main");
@@ -441,9 +524,10 @@ function renderBoard(){
 }
 
 /* ---------- Akte ---------- */
-function openDrawer(id){S.open=id;S.tab=S.open===id?S.tab:"ueberblick";S.confirmDel=false;S.confirmSess=null;renderDrawer();renderBoard();
+function openDrawer(id){if(S.open!==id)S.tab="ueberblick";S.open=id;S.panel=null;S.confirmDel=false;S.confirmSess=null;S.confirmEnd=false;renderDrawer();renderBoard();
   setTimeout(()=>{const x=document.querySelector(".drawer .x");x&&x.focus()},0)}
-function closeDrawer(){const id=S.open;S.open=null;$("#drawer-root").innerHTML="";renderBoard();
+function openPanel(p){S.open=null;S.panel=p;S.confirmSess=null;renderDrawer();renderBoard();setTimeout(()=>{const x=document.querySelector(".drawer .x");x&&x.focus()},0)}
+function closeDrawer(){const id=S.open;S.open=null;S.panel=null;$("#drawer-root").innerHTML="";renderBoard();
   const c=id&&document.querySelector(`[data-open="${CSS.escape(id)}"]`);c&&c.focus()}
 function fld(id,label,field,val,type,ph,extra){
   const dis=S.canWrite?"":" disabled";
@@ -456,7 +540,10 @@ function phaseBox(d){
   return `<div class="phase-box">
     <span class="ph">Phase ${p} · ${ph.name}</span>
     <div class="checks">${ph.checks.map(([k,t])=>`<label class="chk${c[k]?" done":""}"><input type="checkbox" id="c-${k}" data-chk="${k}"${c[k]?" checked":""}${S.canWrite?"":" disabled"}><span>${esc(t)}</span></label>`).join("")}</div>
-    ${S.canWrite?`<div class="phase-nav">${p>1?`<button class="btn small ghost" data-phase="${p-1}" type="button">← Zurück zu ${PHASES[p-2].name}</button>`:""}${p<6?`<button class="btn small" data-phase="${p+1}" type="button">Weiter zu ${PHASES[p].name} →</button>`:""}</div>`:""}
+    ${S.canWrite?`<div class="phase-nav">${p>1?`<button class="btn small ghost" data-phase="${p-1}" type="button">← Zurück zu ${PHASES[p-2].name}</button>`:""}${p<6?`<button class="btn small" data-phase="${p+1}" type="button">Weiter zu ${PHASES[p].name} →</button>`:""}${p<6&&!S.confirmEnd?`<button class="linkish" data-act="end-ask" type="button">Anders beenden …</button>`:""}</div>`:""}
+    ${S.canWrite&&p<6&&S.confirmEnd?`<div class="row-inline"><div class="fld"><label for="end-ausgang">Wie endet es?</label><select id="end-ausgang">${AUSGAENGE.filter(a=>a[0]!=="ziel").map(([k,l])=>`<option value="${k}"${(p<=3)===(k==="kein-auftrag")?" selected":""}>${l}</option>`).join("")}</select></div><button class="btn small red" data-act="end-yes" type="button">Nach „Abgeschlossen“</button><button class="btn small ghost" data-act="end-no" type="button">Abbrechen</button></div>`:""}
+    ${p===6?`<div class="fld"><label for="f-ausgang">Ausgang</label><select id="f-ausgang" data-f="ausgang"${S.canWrite?"":" disabled"}>${AUSGAENGE.map(([k,l])=>`<option value="${k}"${(d.ausgang||"ziel")===k?" selected":""}>${l}</option>`).join("")}</select></div>
+    ${d.ausgang&&d.ausgang!=="ziel"?fld("f-ausgangnotiz","Was lerne ich daraus?","ausgangNotiz",d.ausgangNotiz,"area","Was hat gefehlt? Was würde ich im nächsten Erstgespräch anders fragen?"):""}`:""}
     ${p===6?`<div class="reopen"><span class="ph">Kommt wieder</span>
       <p class="hint">Bucht sie ein Follow-up, geht die Akte mit allen Notizen zurück in den Prozess. Das Kontingent wächst um die gebuchten Termine.${(d.wiederaufnahmen||[]).length?" Bisher: "+d.wiederaufnahmen.map(w=>esc(fmtShort(w.datum))+" ("+w.anzahl+" "+(w.anzahl==1?"Termin":"Termine")+")").join(", ")+".":""}</p>
       ${S.canWrite?`<div class="row-inline"><div class="fld"><label for="r-anzahl">Gebuchte Follow-up-Termine</label><input id="r-anzahl" type="number" min="1" max="20" value="1"></div><button class="btn small red" data-act="reopen" type="button">Follow-up buchen</button></div>`:""}
@@ -466,6 +553,9 @@ function phaseBox(d){
 }
 function tabUeberblick(d){
   return `${phaseBox(d)}
+  <div class="sec"><h3>Stärken</h3>
+    ${fld("f-staerken","Was sie schon kann","staerken",d.staerken,"area","Stärken, die sich zeigen. Sie gehören nach vorn, nicht ans Ende.")}
+  </div>
   <div class="sec"><h3>Person & Kontext</h3><div class="grid2">
     ${fld("f-name","Name oder Kürzel","name",d.name)}
     ${fld("f-rolle","Rolle","rolle",d.rolle)}
@@ -485,26 +575,29 @@ function tabUeberblick(d){
 }
 function tabSitzungen(d){
   const ss=sessions(d),plan=+d.sitzungenPlan||0,dis=S.canWrite?"":" disabled";
-  const items=ss.map((s,i)=>({s,i})).reverse().map(({s,i})=>`<div class="s-item">
-    <span class="s-no">S${i+1}</span><span class="s-date">${esc(fmtShort(s.datum))}</span>
+  let k=0;const num=new Map();ss.forEach(s=>{if(s.art!=="Ausfall")num.set(s.id,++k)});
+  const items=ss.slice().reverse().map(s=>{const aus=s.art==="Ausfall";return `<div class="s-item">
+    <span class="s-no">${aus?"–":"S"+num.get(s.id)}</span><span class="s-date">${esc(fmtShort(s.datum))}</span>
     <div class="s-main">
-      <span class="th">${esc(s.thema||"Ohne Thema")}</span>
+      <span class="th">${esc(aus?"Ausfall"+(s.thema?": "+s.thema:""):(s.thema||"Ohne Thema"))}</span>
       ${s.methode||s.art==="Follow-up"?`<span class="mt">${esc([s.art==="Follow-up"?"Follow-up":"",s.methode].filter(Boolean).join(" · "))}</span>`:""}
       ${s.aha?`<p><span class="lbl">Aha:</span> ${esc(s.aha)}</p>`:""}
+      ${s.beitrag?`<p><span class="lbl">Ihr eigener Beitrag:</span> ${esc(s.beitrag)}</p>`:""}
       ${s.transfer?`<p><span class="lbl">Bis zum nächsten Mal:</span> ${esc(s.transfer)}</p>`:""}
       <div class="s-foot">${s.skala!==""&&s.skala!=null?`<span class="sk">Skala ${esc(s.skala)}/10</span>`:""}${s.rechnung?`<span class="tag">abgerechnet</span>`:""}
         ${S.canWrite?(S.confirmSess===s.id?`<span class="confirm">Löschen? <button class="btn small red" data-sdel-yes="${esc(s.id)}" type="button">Ja</button><button class="btn small ghost" data-sdel-no type="button">Nein</button></span>`:`<button class="linkish" data-sdel="${esc(s.id)}" type="button">Löschen</button>`):""}</div>
-    </div></div>`).join("");
-  return `<div class="sec"><h3>Sitzungen ${plan?`· ${ss.length} von ${plan}`:`· ${ss.length}`}</h3>
+    </div></div>`}).join("");
+  return `<div class="sec"><h3>Sitzungen ${plan?`· ${k} von ${plan}`:`· ${k}`}</h3>
     ${S.canWrite?`<div class="addbox">
       <div class="grid2">
         <div class="fld"><label for="s-datum">Datum</label><input id="s-datum" type="date" value="${todayISO()}"></div>
         <div class="fld"><label for="s-skala">Skala heute (0–10)</label><input id="s-skala" type="number" min="0" max="10" step="0.5" placeholder="Wo stehen Sie heute?"></div>
-        <div class="fld"><label for="s-art">Art</label><select id="s-art"><option${(d.wiederaufnahmen||[]).length?"":" selected"}>Sitzung</option><option${(d.wiederaufnahmen||[]).length?" selected":""}>Follow-up</option></select></div>
+        <div class="fld"><label for="s-art">Art</label><select id="s-art"><option${(d.wiederaufnahmen||[]).length?"":" selected"}>Sitzung</option><option${(d.wiederaufnahmen||[]).length?" selected":""}>Follow-up</option><option>Ausfall</option></select></div>
       </div>
       <div class="fld"><label for="s-thema">Thema der Sitzung</label><input id="s-thema" placeholder="Worum ging es wirklich?"></div>
       <div class="fld"><label for="s-methode">Methode</label><input id="s-methode" list="methoden" placeholder="Wählen oder frei eintragen"></div>
       <div class="fld"><label for="s-aha">Aha-Moment</label><textarea id="s-aha" placeholder="Der Satz, bei dem es klick gemacht hat"></textarea></div>
+      <div class="fld"><label for="s-beitrag">Was hat sie heute selbst beigetragen?</label><textarea id="s-beitrag" placeholder="Ihre Idee, ihr Mut, ihre Klarheit. Stärken sichtbar machen."></textarea></div>
       <div class="fld"><label for="s-transfer">Vereinbarung bis zum nächsten Mal</label><textarea id="s-transfer" placeholder="Was probiert sie im Alltag aus?"></textarea></div>
       <div><button class="btn" data-act="add-sess" type="button">Sitzung speichern</button></div>
     </div>`:""}
@@ -515,7 +608,7 @@ function tabSitzungen(d){
 function chartSVG(d){
   const pts=[];
   if(d.startwert!==""&&d.startwert!=null)pts.push({l:"Start",v:+d.startwert});
-  sessions(d).forEach((s,i)=>{if(s.skala!==""&&s.skala!=null)pts.push({l:"S"+(i+1),v:+s.skala})});
+  held(d).forEach((s,i)=>{if(s.skala!==""&&s.skala!=null)pts.push({l:"S"+(i+1),v:+s.skala})});
   if(pts.length<1)return `<p class="hint">Sobald ein Startwert oder die erste Sitzung mit Skalenwert eingetragen ist, erscheint hier der Verlauf.</p>`;
   const W=560,H=220,L=34,R=24,T=16,B=30,goal=d.zielwert!==""&&d.zielwert!=null?+d.zielwert:null;
   const n=pts.length,xs=i=>n===1?L+(W-L-R)/2:L+i*(W-L-R)/(n-1),ys=v=>T+(10-v)*(H-T-B)/10;
@@ -544,19 +637,23 @@ function tabEntwicklung(d){
       ${fld("f-zielwert","Zielwert (0–10)","zielwert",d.zielwert,"number")}
     </div>
   </div>
-  <div class="sec"><h3>Ressourcen & Stärken</h3>
-    ${fld("f-staerken","Was sie schon kann","staerken",d.staerken,"area","Stärken, die sich im Prozess zeigen. Gut für den Abschluss.")}
-  </div>
   <div class="sec"><h3>Bilanz</h3>
     ${fld("f-bilanz","Bilanz in ihren Worten","bilanz",d.bilanz,"area","Was hat sich verändert? Was nimmt sie mit? (Abschlussgespräch)")}
+  </div>
+  <div class="sec"><h3>Abschlussbrief</h3>
+    <p class="hint">Ein Brief zum Mitnehmen. Er nutzt nur Zielbild, ihre Aha-Sätze, ihren Skalenweg, ihre Stärken und ihre Bilanz. Hypothesen, Resonanz und Motive bleiben draußen. Lies ihn, bevor du ihn weitergibst.</p>
+    ${S.canWrite?`<div class="row-inline"><div class="fld"><label for="b-anrede">Anrede</label><select id="b-anrede"><option value="du">Du</option><option value="sie">Sie</option></select></div>
+      ${S.confirmSess==="brief"?`<span class="confirm">Deine Änderungen am Brief werden überschrieben. <button class="btn small red" data-act="brief-yes" type="button">Neu erstellen</button><button class="btn small ghost" data-sdel-no type="button">Abbrechen</button></span>`
+      :`<button class="btn small" data-act="brief" type="button">${d.abschlussbrief?"Entwurf neu erstellen":"Entwurf aus der Akte erstellen"}</button>${d.abschlussbrief?`<button class="btn small ghost" data-act="brief-copy" type="button">Text kopieren</button>`:""}`}</div>`:""}
+    ${d.abschlussbrief?`<div class="fld"><label for="f-brief">Brief (frei bearbeitbar)</label><textarea id="f-brief" class="brief" data-f="abschlussbrief"${S.canWrite?"":" disabled"}>${esc(d.abschlussbrief)}</textarea></div>`:""}
   </div>`;
 }
 function tabMotive(d){
   const r=d.reiss||{},dis=S.canWrite?"":" disabled";
   const hi=MOTIVE.filter(([m])=>r[m]==="hoch").map(([m])=>m),lo=MOTIVE.filter(([m])=>r[m]==="niedrig").map(([m])=>m);
   return `<div class="sec"><h3>Motivprofil nach Reiss</h3>
-    <p class="hint">Trag die ausgeprägten Motive ein. Hoch und niedrig sind die spannenden Pole, mittel bedeutet: situativ.</p>
-    ${hi.length||lo.length?`<div class="summary">${hi.map(m=>`<span class="pill hoch">${esc(m)} ↑</span>`).join("")}${lo.map(m=>`<span class="pill">${esc(m)} ↓</span>`).join("")}</div>`:""}
+    <p class="hint">Nach Reiss gibt es kein gut oder schlecht, nur unterschiedlich wichtige Lebensmotive. Die Pole sind die spannenden Stellen, „situativ“ heißt: mal so, mal so.</p>
+    ${hi.length||lo.length?`<div class="summary">${hi.map(m=>`<span class="pill hoch">${esc(m)}: sehr wichtig</span>`).join("")}${lo.map(m=>`<span class="pill">${esc(m)}: weniger wichtig</span>`).join("")}</div>`:""}
     <div class="motive">${MOTIVE.map(([m,desc])=>`<div class="mo"><span class="mn">${esc(m)}<span class="md">${esc(desc)}</span></span>
       <span class="seg" role="group" aria-label="${esc(m)}">${STUFEN.map(([k,l])=>`<button type="button" class="${r[m]===k?"on "+k:""}" data-motiv="${esc(m)}" data-stufe="${k}" aria-pressed="${r[m]===k}"${dis}>${l}</button>`).join("")}</span></div>`).join("")}</div>
   </div>
@@ -565,7 +662,8 @@ function tabMotive(d){
   </div>`;
 }
 function tabReflexion(d){
-  return `<div class="sec"><h3>Systemische Hypothesen</h3>
+  return `<p class="privacy">Schreib so, dass die Person es lesen dürfte. Keine Diagnosen, keine Gesundheitsdetails, keine Namen Dritter. Was nur dich betrifft, gehört ins Journal (oben rechts).</p>
+  <div class="sec"><h3>Systemische Hypothesen</h3>
     ${fld("f-hyp","Arbeitshypothesen","hypothesen",d.hypothesen,"area","Was wäre, wenn das Problem eine Funktion im System hat? Wer profitiert davon, dass alles bleibt, wie es ist?")}
   </div>
   <div class="sec"><h3>Innere Bühne</h3>
@@ -595,6 +693,7 @@ function tabDreieck(d){
       ${fld("f-agkontakt","Ansprechperson","agKontakt",d.agKontakt,"text","Name und Funktion")}
     </div>
     ${fld("f-agerwartung","Erwartung der Organisation","agErwartung",d.agErwartung,"area","Was soll sich aus Sicht des Auftraggebers verändern?")}
+    ${fld("f-vertraulichkeit","Vertraulichkeitsabrede","vertraulichkeit",d.vertraulichkeit,"area","Was darf der Auftraggeber erfahren? z. B. Termine und Fortschritt in den Worten des Klienten, keine Inhalte.")}
   </div>
   <div class="sec"><h3>Termine mit dem Auftraggeber · ${ag.length}</h3>
     ${S.canWrite?`<div class="addbox"><div class="grid2">
@@ -609,7 +708,8 @@ function tabDreieck(d){
   <div class="sec"><h3>Leitfragen für das Dreieck</h3><ul class="qs">
     <li>Weiß der Klient, dass dieses Gespräch stattfindet und worum es geht?</li>
     <li>Was darf ich sagen, und was bleibt im Coaching?</li>
-    <li>Passt die Erwartung der Organisation noch zum Ziel des Klienten?</li></ul></div>`;
+    <li>Passt die Erwartung der Organisation noch zum Ziel des Klienten?</li>
+    <li>Kann der Klient in der Zwischenbilanz selbst berichten, mit mir als Moderator?</li></ul></div>`;
 }
 function tabAbrechnung(d){
   const a=d.abrechnung||{},o=offen(d),qe=quarterEnd(),dis=S.canWrite?"":" disabled";
@@ -622,15 +722,20 @@ function tabAbrechnung(d){
       ${S.canWrite&&!k.rechnung?(conf("p:"+k.id,`data-pdel-yes="${esc(k.id)}"`,"Paket löschen?")||`<button class="linkish" data-pdel="${esc(k.id)}" type="button">Löschen</button>`):""}</div>
     </div></div>`).join("");
   const rech=(d.rechnungen||[]).slice().sort((x,y)=>(y.datum||"").localeCompare(x.datum||"")).map(r=>`<div class="s-item">
-    <span class="s-no" style="font-size:16px">${esc(eur(r.betrag))}</span><span class="s-date">${esc(fmtShort(r.datum))}</span>
-    <div class="s-main"><span class="th">Rechnung ${esc(r.nummer||"ohne Nummer")}</span><span class="mt">${esc((r.positionen||[]).join(" · "))}</span>
-      <div class="s-foot">${S.canWrite?(conf("r:"+r.id,`data-rdel-yes="${esc(r.id)}"`,"Rechnung zurücknehmen? Die Posten werden wieder offen.")||`<button class="linkish" data-rdel="${esc(r.id)}" type="button">Zurücknehmen</button>`):""}</div>
+    <span class="s-no" style="font-size:16px">${esc(eur(brutto(r)))}</span><span class="s-date">${esc(fmtShort(r.datum))}</span>
+    <div class="s-main"><span class="th">Rechnung ${esc(r.nummer||"ohne Nummer")}</span>
+      <span class="mt">${esc((r.zeitraum?"Leistungszeitraum "+r.zeitraum+" · ":"")+(r.positionen||[]).join(" · "))}</span>
+      <span class="mt">${esc("netto "+eur(r.betrag)+(r.ust==null?" · USt nicht erfasst":+r.ust?" + "+r.ust+" % USt":" · ohne USt"))}</span>
+      <div class="s-foot">${r.bezahlt?`<span class="paid">bezahlt am ${esc(fmtShort(r.bezahlt))}</span>${S.canWrite?`<button class="linkish" data-paid="${esc(r.id)}" data-undo="1" type="button">rückgängig</button>`:""}`
+        :S.canWrite?`<button class="btn small" data-paid="${esc(r.id)}" type="button">Zahlung eingegangen</button>`:`<span>unbezahlt</span>`}
+      ${S.canWrite?(conf("r:"+r.id,`data-rdel-yes="${esc(r.id)}"`,"Rechnung zurücknehmen? Die Posten werden wieder offen.")||`<button class="linkish" data-rdel="${esc(r.id)}" type="button">Zurücknehmen</button>`):""}</div>
     </div></div>`).join("");
   return `<div class="sec"><h3>Wie wird abgerechnet?</h3>
     <span class="seg" role="group" aria-label="Abrechnungsmodell">${[["einzeln","Einzeltermine"],["paket","Paket"]].map(([k,l])=>`<button type="button" class="${a.modell===k?"on":""}" data-modell="${k}" aria-pressed="${a.modell===k}"${dis}>${l}</button>`).join("")}</span>
     ${!a.modell?`<p class="hint">Wähle das Modell, dann rechnet das Board mit.</p>`:""}
     <div class="grid2">
-      ${a.modell==="einzeln"?`<div class="fld"><label for="a-satz">Honorar pro Termin (€)</label><input id="a-satz" type="number" min="0" step="10" data-af="satz" value="${esc(a.satz)}"${dis}></div>`:""}
+      ${a.modell==="einzeln"?`<div class="fld"><label for="a-satz">Honorar pro Termin, netto (€)</label><input id="a-satz" type="number" min="0" step="10" data-af="satz" value="${esc(a.satz)}"${dis}></div>
+      <div class="fld"><label for="a-ausfall">Ausfallhonorar, netto (€)</label><input id="a-ausfall" type="number" min="0" step="10" data-af="ausfall" value="${esc(a.ausfall)}" placeholder="wie Honorar"${dis}></div>`:""}
       ${fld("f-rechnungan","Rechnung an","rechnungAn",d.rechnungAn,"text",isDreieck(d)?d.auftraggeber:"Klient selbst oder Firma")}
     </div>
   </div>
@@ -645,17 +750,68 @@ function tabAbrechnung(d){
     <p class="hint">${o.alt?"Hier liegt noch etwas aus dem Vorquartal.":"Rechnung spätestens zum Quartalsende am "+esc(fmtShort(qe))+"."}</p>
     ${o.items.length?`<ul class="qs">${o.items.map(i=>`<li>${esc(i.label)}${i.betrag?" · "+esc(eur(i.betrag)):a.modell==="paket"?" · Preis fehlt":""}</li>`).join("")}</ul>
     ${S.canWrite?`<div class="addbox"><div class="grid2">
-      <div class="fld"><label for="r-nr">Rechnungsnummer</label><input id="r-nr" placeholder="z. B. 2026-047"></div>
+      <div class="fld"><label for="r-nr">Rechnungsnummer</label><input id="r-nr" value="${esc(nextNummer())}"></div>
       <div class="fld"><label for="r-datum">Rechnungsdatum</label><input id="r-datum" type="date" value="${todayISO()}"></div>
-    </div><div><button class="btn red" data-act="add-rech" type="button">Rechnung über ${esc(eur(o.sum))} gestellt</button></div></div>`:""}`
+      <div class="fld"><label for="r-ust">Umsatzsteuer</label><select id="r-ust"><option value="19">19 %</option><option value="0"${lastUst()===0?" selected":""}>0 % (Kleinunternehmer oder steuerfrei)</option></select></div>
+    </div>
+    <p class="hint">Die Nummer ist ein Vorschlag: die höchste bisherige plus eins, über alle Klienten hinweg. Der Leistungszeitraum wird aus den Posten übernommen.</p>
+    <div><button class="btn red" data-act="add-rech" type="button">Rechnung über ${esc(eur(o.sum))} netto gestellt</button></div></div>`:""}`
     :`<p class="hint">Alles abgerechnet.</p>`}
   </div>`:""}
   <div class="sec"><h3>Gestellte Rechnungen · ${(d.rechnungen||[]).length}</h3>
     <div class="sess">${rech||`<p class="hint">Noch keine Rechnung.</p>`}</div></div>`;
 }
 const TABS=[["ueberblick","Überblick",tabUeberblick],["sitzungen","Sitzungen",tabSitzungen],["dreieck","Dreieck",tabDreieck],["abrechnung","Abrechnung",tabAbrechnung],["entwicklung","Entwicklung",tabEntwicklung],["motive","Motive",tabMotive],["reflexion","Reflexion",tabReflexion]];
+function panelShell(title,body){
+  return `<div class="scrim" data-act="close"></div>
+  <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="d-h">
+    <div class="d-head"><div class="d-title"><div><h2 id="d-h">${title}</h2></div><button class="x" data-act="close" type="button" aria-label="Schließen">×</button></div></div>
+    <div class="d-body">${body}</div>
+  </aside>`;
+}
+function panelQuartal(){
+  const {s,e,label}=quarterRange(S.qOff),si=isoD(s),ei=isoD(e);
+  const rows=allInvoices().filter(({r})=>r.datum>=si&&r.datum<=ei).sort((a,b)=>a.r.datum.localeCompare(b.r.datum)||(a.r.nummer||"").localeCompare(b.r.nummer||"",undefined,{numeric:true}));
+  const net=rows.reduce((x,{r})=>x+(+r.betrag||0),0),gross=rows.reduce((x,{r})=>x+brutto(r),0),unpaid=rows.filter(({r})=>!r.bezahlt).reduce((x,{r})=>x+brutto(r),0);
+  const offenSum=S.qOff===0?[...S.docs.values()].reduce((x,d)=>x+offen(d).sum,0):0,gaps=nummerLuecken();
+  return `<div class="phase-nav"><button class="btn small ghost" data-act="q-prev" type="button">← Vorquartal</button>${S.qOff<0?`<button class="btn small ghost" data-act="q-next" type="button">Nächstes Quartal →</button>`:""}</div>
+  <div class="sec"><h3>${esc(label)} · ${esc(fmtShort(si))} bis ${esc(fmtShort(ei))}</h3>
+    <div class="kpis">
+      <div class="stat"><span class="n">${esc(eur(net))}</span><span class="l">netto</span></div>
+      <div class="stat"><span class="n">${esc(eur(gross-net))}</span><span class="l">Umsatzsteuer</span></div>
+      <div class="stat"><span class="n">${esc(eur(gross))}</span><span class="l">brutto</span></div>
+      <div class="stat${unpaid?" alert":""}"><span class="n">${esc(eur(unpaid))}</span><span class="l">noch nicht bezahlt</span></div>
+    </div>
+    ${S.qOff===0&&offenSum?`<p class="warnline">Noch nicht abgerechnet: ${esc(eur(offenSum))} netto. Rechnung bis ${esc(fmtShort(ei))}.</p>`:""}
+    ${gaps.length?`<p class="warnline">Lücke in den Rechnungsnummern: ${esc(gaps.join(", "))}. Fortlaufend heißt ohne Lücken.</p>`:""}
+    <p class="hint">Für die Umsatzsteuer-Voranmeldung, nach Rechnungsdatum. Gleiche die Zahlen mit deiner Buchhaltung ab: Das Board vermerkt Rechnungen, es ersetzt sie nicht.</p>
+  </div>
+  <div class="sec"><h3>Rechnungen · ${rows.length}</h3>
+    ${rows.map(({r,d})=>`<div class="qrow"><span class="qd">${esc(fmtShort(r.datum))}</span><span><b>${esc(r.nummer||"ohne Nummer")}</b> · ${esc(d.name||"")}</span><span class="qa">${esc(eur(brutto(r)))}</span>
+      <span class="qx">netto ${esc(eur(r.betrag))}${r.ust==null?" · USt nicht erfasst":+r.ust?" · "+r.ust+" % USt":" · ohne USt"} · ${r.bezahlt?`<span class="paid">bezahlt ${esc(fmtShort(r.bezahlt))}</span>`:"offen"}</span></div>`).join("")||`<p class="hint">In diesem Quartal noch keine Rechnung.</p>`}
+  </div>`;
+}
+function panelJournal(){
+  const list=S.journal.slice().sort((a,b)=>(b.datum||"").localeCompare(a.datum||"")||(b.erstellt||"").localeCompare(a.erstellt||""));
+  return `<p class="hint">Dein Supervisionsjournal, über alle Klienten hinweg. Hier landen Muster, Resonanzen und Fragen an dich selbst, getrennt von den Klientenakten.</p>
+  <div class="sec"><h3>Impulse</h3><ul class="qs">${IMPULSE.map(q=>`<li>${esc(q)}</li>`).join("")}</ul></div>
+  ${jcol&&S.canWrite?`<div class="addbox">
+    <div class="grid2"><div class="fld"><label for="j-datum">Datum</label><input id="j-datum" type="date" value="${todayISO()}"></div>
+    <div class="fld"><label for="j-bezug">Bezug (optional)</label><input id="j-bezug" placeholder="z. B. Anna L., Thomas B."></div></div>
+    <div class="fld"><label for="j-text">Was beschäftigt mich?</label><textarea id="j-text" placeholder="Ein Muster, eine Resonanz, eine Frage für die nächste Supervision"></textarea></div>
+    <div><button class="btn" data-act="add-j" type="button">Eintrag speichern</button></div></div>`:!jcol?`<p class="hint">Das Journal ist in dieser Ansicht nicht erreichbar.</p>`:""}
+  <div class="sec"><h3>Einträge · ${list.length}</h3><div class="sess">${list.map(j=>`<div class="s-item">
+    <span class="s-no" style="font-size:16px">${esc(j.datum?new Date(j.datum).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"}):"–")}</span><span class="s-date">${esc(j.datum?new Date(j.datum).getFullYear():"")}</span>
+    <div class="s-main"><p>${esc(j.text||"")}</p>${j.bezug?`<span class="mt">Bezug: ${esc(j.bezug)}</span>`:""}${j.beispiel?`<span><span class="tag">Beispiel</span></span>`:""}
+      <div class="s-foot">${S.canWrite&&jcol?(S.confirmSess==="j:"+j.id?`<span class="confirm">Löschen? <button class="btn small red" data-jdel-yes="${esc(j.id)}" type="button">Ja</button><button class="btn small ghost" data-sdel-no type="button">Nein</button></span>`:`<button class="linkish" data-jdel="${esc(j.id)}" type="button">Löschen</button>`):""}</div>
+    </div></div>`).join("")||`<p class="hint">Noch kein Eintrag.</p>`}</div></div>`;
+}
 function renderDrawer(){
-  const root=$("#drawer-root"),d=S.open&&S.docs.get(S.open);
+  const root=$("#drawer-root");
+  if(S.panel){const b=root.querySelector(".d-body"),sc=b?b.scrollTop:0;
+    root.innerHTML=S.panel==="quartal"?panelShell("Quartalsübersicht",panelQuartal()):panelShell("Journal",panelJournal());
+    const nb=root.querySelector(".d-body");if(nb)nb.scrollTop=sc;return}
+  const d=S.open&&S.docs.get(S.open);
   if(!d){root.innerHTML="";return}
   const body=root.querySelector(".d-body"),sc=body?body.scrollTop:0,p=phaseOf(d),seit=d.phaseSeit||{};
   const tab=TABS.find(t=>t[0]===S.tab)||TABS[0];
@@ -669,16 +825,61 @@ function renderDrawer(){
     </div>
     <div class="d-body">${tab[2](d)}</div>
     <div class="d-foot"><span>${d.aktualisiert?"Zuletzt bearbeitet "+esc(fmtDT(d.aktualisiert.slice(0,16))):""}</span>
-      ${S.canWrite?(S.confirmDel?`<span class="confirm">Klient und alle Notizen endgültig löschen? <button class="btn small red" data-act="del-yes" type="button">Ja, löschen</button><button class="btn small ghost" data-act="del-no" type="button">Abbrechen</button></span>`:`<button class="linkish" data-act="del-ask" type="button">Klient löschen</button>`):""}</div>
+      <span class="phase-nav">${S.confirmDel==="anon"?`<span class="confirm">Alle Texte und Namen entfernen? Phasen, Daten, Skalenwerte und Rechnungsvermerke bleiben. <button class="btn small red" data-act="anon-yes" type="button">Ja, anonymisieren</button><button class="btn small ghost" data-act="del-no" type="button">Abbrechen</button></span>`
+        :S.confirmDel?`<span class="confirm">Klient und alle Notizen endgültig löschen? <button class="btn small red" data-act="del-yes" type="button">Ja, löschen</button><button class="btn small ghost" data-act="del-no" type="button">Abbrechen</button></span>`
+        :`<button class="linkish" data-act="export" type="button" title="Für Auskunftsanfragen: vor der Herausgabe prüfen">Akte als Text kopieren</button>${S.canWrite?`<button class="linkish" data-act="anon-ask" type="button">Anonymisieren</button><button class="linkish" data-act="del-ask" type="button">Löschen</button>`:""}`}</span></div>
   </aside>`;
   const nb=root.querySelector(".d-body");if(nb)nb.scrollTop=sc;
 }
 function renderAll(){renderPulse();renderBoard();renderDrawer()}
 
+/* ---------- Texte: Abschlussbrief und Akte ---------- */
+function briefEntwurf(d,du){
+  const vn=(d.name||"").split(/\s+/)[0]||"",hs=held(d),clean=t=>t.trim().replace(/^[„“"]+|[„“"]+$/g,"");
+  const aha=hs.filter(s=>s.aha).map(s=>"– „"+clean(s.aha)+"“");
+  const vals=[];if(d.startwert!==""&&d.startwert!=null)vals.push(+d.startwert);hs.forEach(s=>{if(s.skala!==""&&s.skala!=null)vals.push(+s.skala)});
+  const p=[du?"Hallo "+vn+",":"Guten Tag "+(d.name||"")+","];
+  p.push(du?`unser gemeinsamer Weg ist an einem guten Punkt angekommen. Zum Abschluss gebe ich dir mit, was in ${hs.length} Terminen entstanden ist, vor allem in deinen eigenen Worten.`
+           :`unser gemeinsamer Weg ist an einem guten Punkt angekommen. Zum Abschluss gebe ich Ihnen mit, was in ${hs.length} Terminen entstanden ist, vor allem in Ihren eigenen Worten.`);
+  if(d.ziel)p.push((du?"Wo du hinwolltest:":"Wo Sie hinwollten:")+"\n„"+clean(d.ziel)+"“");
+  if(aha.length)p.push((du?"Sätze, die du unterwegs gefunden hast:":"Sätze, die Sie unterwegs gefunden haben:")+"\n"+aha.join("\n"));
+  if(vals.length>1)p.push(du?`Auf deiner eigenen Skala bist du von ${vals[0]} auf ${vals[vals.length-1]} gegangen. Diesen Weg bist du gegangen, nicht ich.`
+                           :`Auf Ihrer eigenen Skala sind Sie von ${vals[0]} auf ${vals[vals.length-1]} gegangen. Diesen Weg sind Sie gegangen, nicht ich.`);
+  if(d.staerken)p.push((du?"Was ich an dir gesehen habe:":"Was ich an Ihnen gesehen habe:")+"\n"+d.staerken.trim());
+  if(d.bilanz)p.push((du?"Deine Bilanz:":"Ihre Bilanz:")+"\n„"+clean(d.bilanz)+"“");
+  p.push(du?"Wenn alte Muster zurückkommen, ist das kein Rückschritt, sondern ein Signal. Die Tür steht offen: Ein Follow-up ist jederzeit möglich."
+           :"Wenn alte Muster zurückkommen, ist das kein Rückschritt, sondern ein Signal. Die Tür steht offen: Ein Follow-up ist jederzeit möglich.");
+  p.push(du?"Herzlich\nSascha":"Herzliche Grüße\nSascha Brink");
+  return p.join("\n\n");
+}
+function akteText(d){
+  const L=[],add=(k,v)=>{if(v!=null&&String(v).trim()!=="")L.push(k+": "+v)};
+  L.push("Akte "+(d.name||"")+" · Stand "+fmtShort(todayISO()),"");
+  add("Rolle",d.rolle);add("Organisation",d.organisation);add("Phase",PHASES[phaseOf(d)-1].name);if(phaseOf(d)===6)add("Ausgang",ausgangLabel(d.ausgang));
+  add("Erstkontakt",d.kontaktDatum&&fmtShort(d.kontaktDatum));add("Anliegen",d.anliegen);add("Zielbild",d.ziel);add("Stärken",d.staerken);
+  add("Auftraggeber",d.auftraggeber);add("Vertraulichkeitsabrede",d.vertraulichkeit);
+  const ss=sessions(d);if(ss.length){L.push("","Termine:");ss.forEach(s=>L.push("- "+fmtShort(s.datum)+" ("+(s.art||"Sitzung")+")"+(s.thema?": "+s.thema:"")+(s.methode?" · "+s.methode:"")+(s.aha?" · Aha: "+s.aha:"")+(s.beitrag?" · Eigener Beitrag: "+s.beitrag:"")+(s.transfer?" · Vereinbarung: "+s.transfer:"")+(s.skala!==""&&s.skala!=null?" · Skala "+s.skala:"")))}
+  const mo=Object.entries(d.reiss||{}).filter(([,v])=>v);if(mo.length){L.push("");add("Motive",mo.map(([m,v])=>m+" "+(STUFEN.find(s=>s[0]===v)||["",v])[1]).join(", "))}
+  add("Deutung der Motive",d.reissNotiz);
+  L.push("","Notizen des Coachs:");add("Hypothesen",d.hypothesen);add("Innere Bühne",d.innenleben);add("Resonanz",d.resonanz);add("Notizen",d.notizen);
+  add("Bilanz",d.bilanz);
+  if((d.rechnungen||[]).length){L.push("","Rechnungen:");d.rechnungen.forEach(r=>L.push("- "+(r.nummer||"ohne Nummer")+" vom "+fmtShort(r.datum)+", "+eur(brutto(r))+(r.bezahlt?", bezahlt":"")))}
+  return L.join("\n");
+}
+function showText(txt){const dl=$("#dlg-text"),ta=$("#t-text");ta.value=txt;try{dl.showModal()}catch(_){dl.setAttribute("open","")}setTimeout(()=>{ta.focus();ta.select()},0)}
+function copyText(txt,what){
+  try{navigator.clipboard.writeText(txt).then(()=>setSave(what+" kopiert"),()=>showText(txt))}catch(_){showText(txt)}
+}
+function addSession(id,s){patch(id,d=>{d.sitzungen=(d.sitzungen||[]).concat(s);if(phaseOf(d)<4&&s.art!=="Ausfall"){d.phase=4;d.phaseSeit=Object.assign({},d.phaseSeit);d.phaseSeit[4]=d.phaseSeit[4]||s.datum}},{drawer:true,now:true})}
+
 /* ---------- Ereignisse ---------- */
-function setPhase(id,n){patch(id,d=>{d.phase=n;d.phaseSeit=d.phaseSeit||{};if(!d.phaseSeit[n])d.phaseSeit[n]=todayISO()},{drawer:true,now:true})}
+function setPhase(id,n){patch(id,d=>{d.phase=n;d.phaseSeit=d.phaseSeit||{};if(!d.phaseSeit[n])d.phaseSeit[n]=todayISO();if(n===6&&!d.ausgang)d.ausgang="ziel"},{drawer:true,now:true})}
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-open],[data-act],[data-phase],[data-tab],[data-motiv],[data-sdel],[data-sdel-yes],[data-sdel-no],[data-agdel],[data-agdel-yes],[data-modell],[data-pdel],[data-pdel-yes],[data-rdel],[data-rdel-yes]");if(!t)return;
+  const t=e.target.closest("[data-quick],[data-open],[data-act],[data-phase],[data-tab],[data-motiv],[data-sdel],[data-sdel-yes],[data-sdel-no],[data-agdel],[data-agdel-yes],[data-modell],[data-pdel],[data-pdel-yes],[data-rdel],[data-rdel-yes],[data-paid],[data-jdel],[data-jdel-yes]");if(!t)return;
+  if(t.dataset.quick){openQuick(t.dataset.quick);return}
+  if(t.dataset.paid&&S.open){const rid=t.dataset.paid,undo=!!t.dataset.undo;patch(S.open,d=>{const r=(d.rechnungen||[]).find(x=>x.id===rid);if(r)r.bezahlt=undo?"":todayISO()},{drawer:true,now:true});return}
+  if(t.dataset.jdel){S.confirmSess="j:"+t.dataset.jdel;renderDrawer();return}
+  if(t.dataset.jdelYes&&jcol){const jid=t.dataset.jdelYes;S.confirmSess=null;S.journal=S.journal.filter(j=>j.id!==jid);renderDrawer();jcol.doc(jid).delete().then(()=>setSave("Gelöscht"),er=>setSave(errText(er),true));return}
   if(t.dataset.modell&&S.open){const m=t.dataset.modell;patch(S.open,d=>{d.abrechnung=Object.assign({},d.abrechnung,{modell:m})},{drawer:true,now:true});return}
   if(t.dataset.pdel){S.confirmSess="p:"+t.dataset.pdel;renderDrawer();return}
   if(t.dataset.pdelYes){const pid=t.dataset.pdelYes;S.confirmSess=null;patch(S.open,d=>{d.pakete=(d.pakete||[]).filter(k=>k.id!==pid)},{drawer:true,now:true});return}
@@ -699,12 +900,46 @@ document.addEventListener("click",e=>{
   const a=t.dataset.act;
   if(a==="close")closeDrawer();
   else if(a==="new")openNew();
+  else if(a==="quartal"){S.qOff=0;openPanel("quartal")}
+  else if(a==="journal")openPanel("journal");
+  else if(a==="q-prev"){S.qOff--;renderDrawer()}
+  else if(a==="q-next"){S.qOff=Math.min(0,S.qOff+1);renderDrawer()}
+  else if(a==="add-j"&&jcol){
+    const text=$("#j-text").value.trim();if(!text){$("#j-text").focus();return}
+    const j={datum:$("#j-datum").value||todayISO(),bezug:$("#j-bezug").value.trim(),text,erstellt:new Date().toISOString()},id=jcol.doc().id;
+    S.journal=S.journal.concat(Object.assign({id},j));renderDrawer();
+    jcol.doc(id).set(j).then(()=>setSave("Gespeichert"),er=>setSave(errText(er),true));
+  }
+  else if(a==="end-ask"){S.confirmEnd=true;renderDrawer()}
+  else if(a==="end-no"){S.confirmEnd=false;renderDrawer()}
+  else if(a==="end-yes"&&S.open){const v=$("#end-ausgang").value;S.confirmEnd=false;patch(S.open,d=>{d.ausgang=v;d.phase=6;d.phaseSeit=Object.assign({},d.phaseSeit);d.phaseSeit[6]=d.phaseSeit[6]||todayISO()},{drawer:true,now:true})}
+  else if((a==="brief"||a==="brief-yes")&&S.open){
+    const d=S.docs.get(S.open);if(!d)return;
+    if(a==="brief"&&d.abschlussbrief){S.confirmSess="brief";renderDrawer();return}
+    const du=$("#b-anrede").value==="du";S.confirmSess=null;
+    patch(S.open,x=>{x.abschlussbrief=briefEntwurf(x,du)},{drawer:true,now:true});
+  }
+  else if(a==="brief-copy"&&S.open){const d=S.docs.get(S.open);if(d)copyText(d.abschlussbrief||"","Brief")}
+  else if(a==="export"&&S.open){const d=S.docs.get(S.open);if(d)copyText(akteText(d),"Akte")}
+  else if(a==="anon-ask"){S.confirmDel="anon";renderDrawer()}
+  else if(a==="anon-yes"&&S.open){
+    S.confirmDel=false;
+    patch(S.open,d=>{
+      ["rolle","organisation","quelle","anliegen","ziel","auftraggeber","agKontakt","agErwartung","vertraulichkeit","rhythmus","staerken","bilanz","hypothesen","innenleben","resonanz","notizen","reissNotiz","abschlussbrief","ausgangNotiz","rechnungAn","naechsterTermin"].forEach(k=>{if(k in d)d[k]=""});
+      d.name="Anonym "+d.id.slice(0,4).toUpperCase();d.reiss={};
+      (d.sitzungen||[]).forEach(s=>{s.thema="";s.aha="";s.transfer="";s.beitrag=""});
+      (d.agTermine||[]).forEach(x=>{x.ergebnis=""});
+      d.anonymisiert=todayISO();d.checks=Object.assign({},d.checks,{loeschen:true});
+    },{drawer:true,now:true});
+  }
   else if(a==="del-ask"){S.confirmDel=true;renderDrawer()}
   else if(a==="del-no"){S.confirmDel=false;renderDrawer()}
   else if(a==="del-yes"){S.confirmDel=false;removeDoc(S.open)}
   else if(a==="ex-ask"){S.confirmEx=true;renderPulse()}
   else if(a==="ex-no"){S.confirmEx=false;renderPulse()}
-  else if(a==="ex-yes"){S.confirmEx=false;[...S.docs.values()].filter(d=>d.beispiel).forEach(d=>{S.docs.delete(d.id);dirty.add(d.id);schedule(d.id,0)});if(S.open&&!S.docs.get(S.open))closeDrawer();renderAll()}
+  else if(a==="ex-yes"){S.confirmEx=false;[...S.docs.values()].filter(d=>d.beispiel).forEach(d=>{S.docs.delete(d.id);dirty.add(d.id);schedule(d.id,0)});
+    if(jcol){S.journal.filter(j=>j.beispiel).forEach(j=>jcol.doc(j.id).delete().catch(()=>{}));S.journal=S.journal.filter(j=>!j.beispiel)}
+    if(S.open&&!S.docs.get(S.open))closeDrawer();renderAll()}
   else if(a==="add-ag"&&S.open){
     const v=id=>$(id).value.trim();
     if(!v("#ag-datum")){$("#ag-datum").focus();setSave("Bitte Datum und Uhrzeit eintragen.",true);return}
@@ -718,7 +953,10 @@ document.addEventListener("click",e=>{
   }
   else if(a==="add-rech"&&S.open){
     const d0=S.docs.get(S.open),o=offen(d0);if(!o.items.length)return;
-    const r={id:uid(),nummer:$("#r-nr").value.trim(),datum:$("#r-datum").value||todayISO(),betrag:o.sum,positionen:o.items.map(i=>i.label)};
+    const nr=$("#r-nr").value.trim();
+    if(nr&&allInvoices().some(x=>x.r.nummer===nr)){$("#r-nr").focus();setSave("Die Nummer "+nr+" gibt es schon.",true);return}
+    const ds=o.items.map(i=>i.datum).filter(Boolean).sort(),zr=ds.length?fmtShort(ds[0])+(ds[ds.length-1]!==ds[0]?" bis "+fmtShort(ds[ds.length-1]):""):"";
+    const r={id:uid(),nummer:nr,datum:$("#r-datum").value||todayISO(),betrag:o.sum,ust:+$("#r-ust").value,zeitraum:zr,bezahlt:"",positionen:o.items.map(i=>i.label)};
     patch(S.open,d=>{
       d.rechnungen=(d.rechnungen||[]).concat(r);
       o.items.forEach(it=>{const x=it.kind==="paket"?(d.pakete||[]).find(k=>k.id===it.id):(d.sitzungen||[]).find(s=>s.id===it.id);if(x)x.rechnung=r.id});
@@ -729,8 +967,9 @@ document.addEventListener("click",e=>{
     const n=Math.max(1,Math.min(20,Math.round(+$("#r-anzahl").value||1))),t0=todayISO();
     S.tab="sitzungen";
     patch(S.open,d=>{
+      delete d.ausgang;
       d.wiederaufnahmen=(d.wiederaufnahmen||[]).concat({datum:t0,anzahl:n});
-      d.sitzungenPlan=Math.max(+d.sitzungenPlan||0,sessions(d).length)+n;
+      d.sitzungenPlan=Math.max(+d.sitzungenPlan||0,held(d).length)+n;
       d.phase=4;d.phaseSeit=Object.assign({},d.phaseSeit);delete d.phaseSeit[5];delete d.phaseSeit[6];d.phaseSeit[4]=t0;
       d.checks=Object.assign({},d.checks);PHASES[4].checks.forEach(([k])=>delete d.checks[k]);
       if((d.abrechnung||{}).modell==="paket")d.pakete=(d.pakete||[]).concat({id:uid(),termine:n,preis:"",gebucht:t0,rechnung:null});
@@ -738,9 +977,9 @@ document.addEventListener("click",e=>{
   }
   else if(a==="add-sess"&&S.open){
     const v=id=>$(id).value.trim();
-    const s={id:uid(),art:v("#s-art"),datum:v("#s-datum")||todayISO(),thema:v("#s-thema"),methode:v("#s-methode"),aha:v("#s-aha"),transfer:v("#s-transfer"),skala:v("#s-skala")===""?"":Math.max(0,Math.min(10,+v("#s-skala")))};
-    if(!s.thema&&!s.aha&&!s.transfer&&s.skala===""){$("#s-thema").focus();setSave("Bitte mindestens ein Thema eintragen.",true);return}
-    patch(S.open,d=>{d.sitzungen=(d.sitzungen||[]).concat(s);d.checks=d.checks||{};if(phaseOf(d)<4){d.phase=4;d.phaseSeit=d.phaseSeit||{};d.phaseSeit[4]=d.phaseSeit[4]||s.datum}},{drawer:true,now:true});
+    const s={id:uid(),art:v("#s-art"),datum:v("#s-datum")||todayISO(),thema:v("#s-thema"),methode:v("#s-methode"),aha:v("#s-aha"),beitrag:v("#s-beitrag"),transfer:v("#s-transfer"),skala:v("#s-skala")===""?"":Math.max(0,Math.min(10,+v("#s-skala")))};
+    if(s.art!=="Ausfall"&&!s.thema&&!s.aha&&!s.transfer&&s.skala===""){$("#s-thema").focus();setSave("Bitte mindestens ein Thema eintragen.",true);return}
+    addSession(S.open,s);
   }
 });
 document.addEventListener("input",e=>{
@@ -754,9 +993,29 @@ document.addEventListener("change",e=>{
   const t=e.target;
   if(t.dataset.chk&&S.open){const k=t.dataset.chk;patch(S.open,d=>{d.checks=d.checks||{};d.checks[k]=t.checked},{drawer:true});return}
   if((t.dataset.af||t.dataset.ppreis)&&S.open){renderDrawer();return}
-  if(t.dataset.f&&S.open){flush(S.open);const h=document.getElementById("d-h"),d=S.docs.get(S.open);if(h&&d&&t.dataset.f==="name")h.textContent=d.name||"Ohne Namen"}
+  if(t.dataset.f&&S.open){flush(S.open);if(t.dataset.f==="ausgang"){renderDrawer();return}const h=document.getElementById("d-h"),d=S.docs.get(S.open);if(h&&d&&t.dataset.f==="name")h.textContent=d.name||"Ohne Namen"}
 });
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&S.open&&!$("#dlg-new").open)closeDrawer()});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&(S.open||S.panel)&&!document.querySelector("dialog[open]"))closeDrawer();
+  if((e.key==="Enter"||e.key===" ")&&e.target.matches&&e.target.matches(".card[data-open]")){e.preventDefault();openDrawer(e.target.dataset.open)}
+});
+
+/* Schnellnotiz direkt von der Karte */
+function openQuick(id){
+  const d=S.docs.get(id);if(!d||!S.canWrite)return;
+  S.quickId=id;$("#form-quick").reset();$("#q-who").textContent=(d.name||"Ohne Namen")+" · Sitzung "+(held(d).length+1)+((+d.sitzungenPlan)?" von "+d.sitzungenPlan:"");
+  $("#q-datum").value=todayISO();$("#q-art").value=(d.wiederaufnahmen||[]).length?"Follow-up":"Sitzung";
+  const dl=$("#dlg-quick");try{dl.showModal()}catch(_){dl.setAttribute("open","")}setTimeout(()=>$("#q-thema").focus(),0);
+}
+$("#q-cancel").addEventListener("click",()=>$("#dlg-quick").close());
+$("#t-close").addEventListener("click",()=>$("#dlg-text").close());
+$("#form-quick").addEventListener("submit",e=>{
+  e.preventDefault();const id=S.quickId;if(!id)return;
+  const v=x=>$(x).value.trim();
+  const s={id:uid(),art:v("#q-art"),datum:v("#q-datum")||todayISO(),thema:v("#q-thema"),methode:"",aha:v("#q-aha"),beitrag:"",transfer:v("#q-transfer"),skala:v("#q-skala")===""?"":Math.max(0,Math.min(10,+v("#q-skala")))};
+  if(s.art!=="Ausfall"&&!s.thema&&!s.aha&&s.skala===""){$("#q-thema").focus();return}
+  $("#dlg-quick").close();addSession(id,s);S.quickId=null;
+});
 $("#q").addEventListener("input",e=>{S.q=e.target.value.trim();renderBoard()});
 $("#only-flags").addEventListener("change",e=>{S.onlyFlags=e.target.checked;renderBoard()});
 
@@ -790,6 +1049,12 @@ renderAll();
   if(!db){S.offline=true;renderAll();return}
   try{const u=await window.claude.use("user");if(u){const w=await u.can("data.write");if(w===false)S.canWrite=false}}catch(_){}
   col=db.collection("klienten");
+  jcol=db.collection("journal");
+  jcol.onSnapshot(sn=>{
+    S.journal=sn.docs.map(x=>Object.assign({id:x.id},JSON.parse(JSON.stringify(x.data()||{}))));
+    const a=document.activeElement,typing=a&&a.closest&&a.closest(".drawer")&&a.matches("input,textarea,select");
+    if(S.panel==="journal"&&!typing)renderDrawer();
+  },()=>{});
   let timer=setTimeout(()=>{if(!S.loaded){S.stale=true;renderPulse()}},10000);
   col.onSnapshot(snap=>{
     const seen=new Set();
