@@ -163,6 +163,12 @@ h1,h2,h3{text-wrap:balance;margin:0}
 .qrow .qx{grid-column:2 / span 2;font-size:13px;color:var(--mute)}
 .qrow .qd{font-size:13px;color:var(--mute)}
 textarea.brief{min-height:300px;font-size:15px}
+.talk{border:1px dashed var(--ink-2);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--paper)}
+.talk textarea.roh{min-height:110px}
+.talk .ph{font:500 13px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.filebtn{cursor:pointer}
+.talk .st{font-size:13px;color:var(--ink-2)}
+.talk .st.err{color:var(--red)}
 
 .sess{display:flex;flex-direction:column;gap:10px}
 .s-item{border-top:1px solid var(--rule);padding-top:12px;display:grid;grid-template-columns:64px 1fr;gap:4px 14px}
@@ -280,6 +286,7 @@ dialog::backdrop{background:var(--scrim)}
   <form class="dlg" id="form-quick" method="dialog">
     <h2 id="dlg-quick-h">Schnellnotiz</h2>
     <p class="hint" id="q-who"></p>
+    <div id="q-talk"></div>
     <div class="grid2">
       <div class="fld"><label for="q-datum">Datum</label><input id="q-datum" type="date"></div>
       <div class="fld"><label for="q-art">Art</label><select id="q-art"><option>Sitzung</option><option>Follow-up</option><option>Ausfall</option></select></div>
@@ -334,7 +341,7 @@ const ausgangLabel=k=>(AUSGAENGE.find(a=>a[0]===k)||AUSGAENGE[0])[1];
 const IMPULSE=["Welches Muster begegnet mir diese Woche zum zweiten Mal?","Bei wem habe ich gerade mehr Energie als der Klient selbst?","Wo habe ich zuletzt eine Methode benutzt, um einer Begegnung auszuweichen?","Welche Klientin erinnert mich an jemanden, und was macht das mit mir?"];
 
 /* ---------- Zustand ---------- */
-const S={docs:new Map(),open:null,panel:null,tab:"ueberblick",q:"",onlyFlags:false,loaded:false,offline:false,stale:false,canWrite:true,confirmDel:false,confirmSess:null,confirmEx:false,confirmEnd:false,qOff:0,journal:[],quickId:null};
+const S={sample:null,docs:new Map(),open:null,panel:null,tab:"ueberblick",q:"",onlyFlags:false,loaded:false,offline:false,stale:false,canWrite:true,confirmDel:false,confirmSess:null,confirmEx:false,confirmEnd:false,qOff:0,journal:[],quickId:null};
 let col=null,jcol=null;
 const dirty=new Set(),writing=new Set(),timers=new Map();
 const $=s=>document.querySelector(s);
@@ -589,6 +596,7 @@ function tabSitzungen(d){
     </div></div>`}).join("");
   return `<div class="sec"><h3>Sitzungen ${plan?`· ${k} von ${plan}`:`· ${k}`}</h3>
     ${S.canWrite?`<div class="addbox">
+      ${talkBox("s-")}
       <div class="grid2">
         <div class="fld"><label for="s-datum">Datum</label><input id="s-datum" type="date" value="${todayISO()}"></div>
         <div class="fld"><label for="s-skala">Skala heute (0–10)</label><input id="s-skala" type="number" min="0" max="10" step="0.5" placeholder="Wo stehen Sie heute?"></div>
@@ -833,6 +841,81 @@ function renderDrawer(){
 }
 function renderAll(){renderPulse();renderBoard();renderDrawer()}
 
+/* ---------- Erzählen statt tippen: Diktat oder Transkript ordnen ---------- */
+function talkBox(px){
+  return `<div class="talk">
+    <span class="ph">Erzählen statt tippen</span>
+    <div class="fld"><label for="${px}roh">Diktat oder Transkript</label><textarea id="${px}roh" class="roh" placeholder="Sprich einfach los: Mikrofon-Taste auf der Handy-Tastatur, am Mac zweimal die Fn-Taste, unter Windows Win + H. Oder lade ein Transkript."></textarea></div>
+    <div class="row-inline">
+      <label class="btn small ghost filebtn" for="${px}datei">Transkript laden</label><input id="${px}datei" type="file" accept=".txt,.vtt,.srt,.md,text/plain,audio/*" data-trans="${px}" hidden>
+      ${S.sample?`<button class="btn small" type="button" data-ordnen="${px}">Ordnen lassen</button>`:""}
+    </div>
+    <span class="st" id="${px}status" aria-live="polite"></span>
+    <div id="${px}vorschlag"></div>
+    <p class="hint">Das Rohmaterial wird nicht gespeichert, nur was du in die Felder übernimmst.${S.sample?" Zum Ordnen geht der Text an Claude, über dein eigenes Konto.":""} Transkripte als .txt, .vtt oder .srt, zum Beispiel aus Zoom oder Teams.</p>
+  </div>`;
+}
+function cleanTranscript(t){
+  return t.replace(/^﻿/,"").replace(/^WEBVTT.*$/m,"").split(/\r?\n/)
+    .filter(l=>!/^\s*\d+\s*$/.test(l)&&!/-->/.test(l)&&!/^NOTE\b/.test(l)).join("\n")
+    .replace(/<v\s+([^>]+)>/g,"$1: ").replace(/<[^>]+>/g,"").replace(/\n{3,}/g,"\n\n").trim();
+}
+function talkStatus(px,msg,err){const el=$("#"+px+"status");if(el){el.textContent=msg;el.classList.toggle("err",!!err)}}
+function readTranscript(input){
+  const px=input.dataset.trans,f=input.files&&input.files[0];if(!f)return;
+  if(/^audio\//.test(f.type)||/\.(m4a|mp3|wav|aac|ogg|webm)$/i.test(f.name)){
+    talkStatus(px,"Audiodateien kann das Board nicht selbst abschreiben. Lass die Aufnahme vorher transkribieren (Zoom, Teams oder die Transkription in Apples Sprachmemos) und lade dann den Text.",true);input.value="";return;
+  }
+  const rd=new FileReader();
+  rd.onload=()=>{let t=cleanTranscript(String(rd.result||""));const cut=t.length>150000;if(cut)t=t.slice(0,150000);
+    const ta=$("#"+px+"roh");if(ta)ta.value=t;
+    talkStatus(px,"Transkript geladen: "+t.split(/\s+/).filter(Boolean).length+" Wörter"+(cut?" (gekürzt auf den Anfang)":"")+". "+(S.sample?"Jetzt „Ordnen lassen“.":""))};
+  rd.onerror=()=>talkStatus(px,"Die Datei ließ sich nicht lesen.",true);
+  rd.readAsText(f);input.value="";
+}
+function ordnenPrompt(d,raw){
+  return `Du hilfst Sascha Brink, einem systemischen Coach für Führungskräfte, eine Coaching-Sitzung zu dokumentieren. Unten steht entweder sein frei gesprochenes Diktat nach der Sitzung oder ein Gesprächstranskript.
+
+Kontext zum Klienten: Rolle: ${d.rolle||"unbekannt"}. Anliegen: ${d.anliegen||"unbekannt"}. Zielbild: ${d.ziel||"unbekannt"}.
+
+Antworte ausschließlich mit einem JSON-Objekt mit genau diesen Feldern:
+"thema": Worum ging es wirklich? Höchstens 12 Wörter.
+"methode": die eingesetzte Methode, wenn erkennbar, bevorzugt aus dieser Liste: ${METHODEN.join(", ")}. Sonst "".
+"aha": der wichtigste Aha-Satz des Klienten, möglichst wörtlich, ohne Anführungszeichen. Sonst "".
+"beitrag": was der Klient heute selbst beigetragen hat (eine Idee, Mut, Klarheit), ein Satz. Sonst "".
+"transfer": die Vereinbarung bis zum nächsten Mal, ein bis zwei Sätze. Sonst "".
+"skala": der Skalenwert 0 bis 10 als Zahl, nur wenn er ausdrücklich genannt wird. Sonst null.
+"staerken": eine beobachtete Stärke des Klienten, ein Satz. Sonst "".
+
+Regeln: Nichts erfinden, was nicht im Text steht. Keine Diagnosen, keine Gesundheitsdetails. Keine Namen anderer Personen, ersetze sie durch ihre Rolle (zum Beispiel „ein Schichtleiter“). Deutsch, knapp, wertschätzend.
+
+Text:
+"""
+${raw}
+"""`;
+}
+async function ordnen(px,btn){
+  const ta=$("#"+px+"roh"),raw=ta?ta.value.trim():"";
+  if(raw.length<20){talkStatus(px,"Erst etwas erzählen oder ein Transkript laden.",true);return}
+  const id=px==="q-"?S.quickId:S.open,d=S.docs.get(id);if(!d||!S.sample)return;
+  btn.disabled=true;talkStatus(px,"Claude ordnet … das dauert meist eine halbe Minute.");
+  try{
+    const r=await S.sample.json(ordnenPrompt(d,raw),{modelTier:"default"});
+    let kept=0;
+    const put=(f,v)=>{const el=$("#"+px+f);if(!el||v==null||v==="")return;if(el.value.trim()){kept++;return}el.value=v};
+    ["thema","methode","aha","beitrag","transfer"].forEach(f=>put(f,typeof r[f]==="string"?r[f].trim():""));
+    if(typeof r.skala==="number"&&r.skala>=0&&r.skala<=10)put("skala",r.skala);
+    talkStatus(px,"Vorschlag eingetragen. Bitte prüfen und anpassen, dann speichern."+(kept?" Was du schon ausgefüllt hattest, habe ich nicht überschrieben.":""));
+    const vb=$("#"+px+"vorschlag");
+    if(vb&&typeof r.staerken==="string"&&r.staerken.trim()){S.stVorschlag={id,text:r.staerken.trim()};vb.innerHTML=`<p class="hint">Beobachtete Stärke: „${esc(S.stVorschlag.text)}“ <button class="linkish" type="button" data-addst="1">Zu Stärken hinzufügen</button></p>`}
+  }catch(e){
+    const c=e&&e.code;
+    talkStatus(px,c==="not_granted"?"Claude ist für dieses Board nicht freigegeben. Du kannst es in den Berechtigungen der Seite erlauben."
+      :c==="rate_limited"?"Gerade zu viele Anfragen. Versuch es in einer Minute noch einmal."
+      :c==="cancelled"?"Abgebrochen.":"Das Ordnen hat nicht geklappt. Der Text ist noch da, du kannst es erneut versuchen.",true);
+  }finally{btn.disabled=false}
+}
+
 /* ---------- Texte: Abschlussbrief und Akte ---------- */
 function briefEntwurf(d,du){
   const vn=(d.name||"").split(/\s+/)[0]||"",hs=held(d),clean=t=>t.trim().replace(/^[„“"]+|[„“"]+$/g,"");
@@ -875,8 +958,11 @@ function addSession(id,s){patch(id,d=>{d.sitzungen=(d.sitzungen||[]).concat(s);i
 /* ---------- Ereignisse ---------- */
 function setPhase(id,n){patch(id,d=>{d.phase=n;d.phaseSeit=d.phaseSeit||{};if(!d.phaseSeit[n])d.phaseSeit[n]=todayISO();if(n===6&&!d.ausgang)d.ausgang="ziel"},{drawer:true,now:true})}
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-quick],[data-open],[data-act],[data-phase],[data-tab],[data-motiv],[data-sdel],[data-sdel-yes],[data-sdel-no],[data-agdel],[data-agdel-yes],[data-modell],[data-pdel],[data-pdel-yes],[data-rdel],[data-rdel-yes],[data-paid],[data-jdel],[data-jdel-yes]");if(!t)return;
+  const t=e.target.closest("[data-quick],[data-ordnen],[data-addst],[data-open],[data-act],[data-phase],[data-tab],[data-motiv],[data-sdel],[data-sdel-yes],[data-sdel-no],[data-agdel],[data-agdel-yes],[data-modell],[data-pdel],[data-pdel-yes],[data-rdel],[data-rdel-yes],[data-paid],[data-jdel],[data-jdel-yes]");if(!t)return;
   if(t.dataset.quick){openQuick(t.dataset.quick);return}
+  if(t.dataset.ordnen){ordnen(t.dataset.ordnen,t);return}
+  if(t.dataset.addst&&S.stVorschlag){const v=S.stVorschlag;S.stVorschlag=null;t.closest("p").remove();
+    if(S.docs.get(v.id))patch(v.id,d=>{d.staerken=(d.staerken?d.staerken.trim()+"\n":"")+v.text});setSave("Stärke übernommen");return}
   if(t.dataset.paid&&S.open){const rid=t.dataset.paid,undo=!!t.dataset.undo;patch(S.open,d=>{const r=(d.rechnungen||[]).find(x=>x.id===rid);if(r)r.bezahlt=undo?"":todayISO()},{drawer:true,now:true});return}
   if(t.dataset.jdel){S.confirmSess="j:"+t.dataset.jdel;renderDrawer();return}
   if(t.dataset.jdelYes&&jcol){const jid=t.dataset.jdelYes;S.confirmSess=null;S.journal=S.journal.filter(j=>j.id!==jid);renderDrawer();jcol.doc(jid).delete().then(()=>setSave("Gelöscht"),er=>setSave(errText(er),true));return}
@@ -991,6 +1077,7 @@ document.addEventListener("input",e=>{
 });
 document.addEventListener("change",e=>{
   const t=e.target;
+  if(t.dataset.trans){readTranscript(t);return}
   if(t.dataset.chk&&S.open){const k=t.dataset.chk;patch(S.open,d=>{d.checks=d.checks||{};d.checks[k]=t.checked},{drawer:true});return}
   if((t.dataset.af||t.dataset.ppreis)&&S.open){renderDrawer();return}
   if(t.dataset.f&&S.open){flush(S.open);if(t.dataset.f==="ausgang"){renderDrawer();return}const h=document.getElementById("d-h"),d=S.docs.get(S.open);if(h&&d&&t.dataset.f==="name")h.textContent=d.name||"Ohne Namen"}
@@ -1003,7 +1090,7 @@ document.addEventListener("keydown",e=>{
 /* Schnellnotiz direkt von der Karte */
 function openQuick(id){
   const d=S.docs.get(id);if(!d||!S.canWrite)return;
-  S.quickId=id;$("#form-quick").reset();$("#q-who").textContent=(d.name||"Ohne Namen")+" · Sitzung "+(held(d).length+1)+((+d.sitzungenPlan)?" von "+d.sitzungenPlan:"");
+  S.quickId=id;$("#form-quick").reset();$("#q-talk").innerHTML=talkBox("q-");$("#q-who").textContent=(d.name||"Ohne Namen")+" · Sitzung "+(held(d).length+1)+((+d.sitzungenPlan)?" von "+d.sitzungenPlan:"");
   $("#q-datum").value=todayISO();$("#q-art").value=(d.wiederaufnahmen||[]).length?"Follow-up":"Sitzung";
   const dl=$("#dlg-quick");try{dl.showModal()}catch(_){dl.setAttribute("open","")}setTimeout(()=>$("#q-thema").focus(),0);
 }
@@ -1049,6 +1136,11 @@ renderAll();
   if(!db){S.offline=true;renderAll();return}
   try{const u=await window.claude.use("user");if(u){const w=await u.can("data.write");if(w===false)S.canWrite=false}}catch(_){}
   col=db.collection("klienten");
+  window.claude.use("sample").then(s=>{
+    if(!s)return;S.sample=s;
+    const a=document.activeElement,typing=a&&a.closest&&a.closest(".drawer")&&a.matches("input,textarea,select");
+    if(S.open&&S.tab==="sitzungen"&&!typing)renderDrawer();
+  }).catch(()=>{});
   jcol=db.collection("journal");
   jcol.onSnapshot(sn=>{
     S.journal=sn.docs.map(x=>Object.assign({id:x.id},JSON.parse(JSON.stringify(x.data()||{}))));
