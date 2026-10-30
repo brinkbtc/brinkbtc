@@ -165,6 +165,11 @@ h1,h2,h3{text-wrap:balance;margin:0}
 textarea.brief{min-height:300px;font-size:15px}
 .talk{border:1px dashed var(--ink-2);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--paper)}
 .talk textarea.roh{min-height:110px}
+.nach{border-top:1px solid var(--rule);padding-top:8px;margin-top:4px}
+.nach summary{cursor:pointer;font:500 13px/1.4 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.nach[open]{display:flex;flex-direction:column;gap:8px}
+.qs.small li{font-size:14px;padding:7px 10px 7px 12px}
+.qs.small li::before{top:7px;bottom:7px}
 .talk .ph{font:500 13px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
 .filebtn{cursor:pointer}
 .talk .st{font-size:13px;color:var(--ink-2)}
@@ -338,7 +343,8 @@ const MOTIVE=[["Macht","Einfluss, Verantwortung, führen"],["Unabhängigkeit","S
 const STUFEN=[["niedrig","weniger wichtig"],["mittel","situativ"],["hoch","sehr wichtig"]];
 const AUSGAENGE=[["ziel","Ziel erreicht"],["kein-auftrag","Kein Auftrag zustande gekommen"],["uebergeben","Übergeben (z. B. Therapie, andere Beratung)"],["vorzeitig","Vorzeitig beendet"]];
 const ausgangLabel=k=>(AUSGAENGE.find(a=>a[0]===k)||AUSGAENGE[0])[1];
-const IMPULSE=["Welches Muster begegnet mir diese Woche zum zweiten Mal?","Bei wem habe ich gerade mehr Energie als der Klient selbst?","Wo habe ich zuletzt eine Methode benutzt, um einer Begegnung auszuweichen?","Welche Klientin erinnert mich an jemanden, und was macht das mit mir?"];
+const NACHHOER=["Welches Ohr hatte ich offen: Sache, Beziehung, Selbstkundgabe oder Appell? Welches hätte es gebraucht?","Welches Wort kam mehrmals, und habe ich es aufgegriffen?","Wo hat sie innegehalten, gelacht, das Tempo gewechselt?","Wo habe ich unterbrochen oder eine Lösung angeboten?","Was höre ich jetzt, das ich im Raum nicht gehört habe?"];
+const IMPULSE=["Was habe ich beim Nachhören über mein eigenes Zuhören gelernt?","Welches Muster begegnet mir diese Woche zum zweiten Mal?","Bei wem habe ich gerade mehr Energie als der Klient selbst?","Wo habe ich zuletzt eine Methode benutzt, um einer Begegnung auszuweichen?","Welche Klientin erinnert mich an jemanden, und was macht das mit mir?"];
 
 /* ---------- Zustand ---------- */
 const S={sample:null,docs:new Map(),open:null,panel:null,tab:"ueberblick",q:"",onlyFlags:false,loaded:false,offline:false,stale:false,canWrite:true,confirmDel:false,confirmSess:null,confirmEx:false,confirmEnd:false,qOff:0,journal:[],quickId:null};
@@ -412,6 +418,7 @@ function flags(d){
     if(o.alt)f.push({w:1,t:"Rechnung überfällig (Vorquartal): "+eur(o.sum)});
     else if(daysFrom(quarterEnd())<=14)f.push({w:1,t:"Rechnung bis "+fmtShort(quarterEnd())+": "+eur(o.sum)});
   }
+  if((d.sitzungen||[]).some(s=>s.nachhoeren&&!s.aufnahmeGeloescht&&daysFrom(s.datum)<=-14))f.push({w:0,t:"Aufnahme auf dem iPhone löschen?"});
   const unpaid=(d.rechnungen||[]).filter(r=>!r.bezahlt&&daysFrom(r.datum)<=-30);
   if(unpaid.length)f.push({w:1,t:"Zahlung offen: "+eur(unpaid.reduce((x,r)=>x+brutto(r),0))});
   return f;
@@ -591,6 +598,11 @@ function tabSitzungen(d){
       ${s.aha?`<p><span class="lbl">Aha:</span> ${esc(s.aha)}</p>`:""}
       ${s.beitrag?`<p><span class="lbl">Ihr eigener Beitrag:</span> ${esc(s.beitrag)}</p>`:""}
       ${s.transfer?`<p><span class="lbl">Bis zum nächsten Mal:</span> ${esc(s.transfer)}</p>`:""}
+      ${aus?"":`<details class="nach"${s.nachhoeren&&!s.aufnahmeGeloescht?" open":""}><summary>Beim Nachhören${s.nachhoeren?" ✓":""}</summary>
+        <ul class="qs small">${NACHHOER.map(q=>`<li>${esc(q)}</li>`).join("")}</ul>
+        <div class="fld"><label for="nach-${esc(s.id)}">Was ist mir beim Nachhören aufgefallen?</label><textarea id="nach-${esc(s.id)}" data-snach="${esc(s.id)}" placeholder="Über sie, über mich, über unser Gespräch"${dis}>${esc(s.nachhoeren||"")}</textarea></div>
+        <label class="chk${s.aufnahmeGeloescht?" done":""}"><input type="checkbox" id="gel-${esc(s.id)}" data-sgel="${esc(s.id)}"${s.aufnahmeGeloescht?" checked":""}${dis}><span>Aufnahme und Transkript auf dem iPhone gelöscht</span></label>
+      </details>`}
       <div class="s-foot">${s.skala!==""&&s.skala!=null?`<span class="sk">Skala ${esc(s.skala)}/10</span>`:""}${s.rechnung?`<span class="tag">abgerechnet</span>`:""}
         ${S.canWrite?(S.confirmSess===s.id?`<span class="confirm">Löschen? <button class="btn small red" data-sdel-yes="${esc(s.id)}" type="button">Ja</button><button class="btn small ghost" data-sdel-no type="button">Nein</button></span>`:`<button class="linkish" data-sdel="${esc(s.id)}" type="button">Löschen</button>`):""}</div>
     </div></div>`}).join("");
@@ -852,7 +864,7 @@ function talkBox(px){
     </div>
     <span class="st" id="${px}status" aria-live="polite"></span>
     <div id="${px}vorschlag"></div>
-    <p class="hint">Das Rohmaterial wird nicht gespeichert, nur was du in die Felder übernimmst.${S.sample?" Zum Ordnen geht der Text an Claude, über dein eigenes Konto.":""} Transkripte als .txt, .vtt oder .srt, zum Beispiel aus Zoom oder Teams.</p>
+    <p class="hint">Gedacht für dein eigenes Diktat. Aufnahmen aus dem Coaching bleiben am besten auf dem iPhone: Nachhören und das, was dir auffällt, unten bei der Sitzung unter „Beim Nachhören“ notieren. Das Rohmaterial hier wird nicht gespeichert.${S.sample?" Zum Ordnen geht der Text an Claude, über dein eigenes Konto.":""}</p>
   </div>`;
 }
 function cleanTranscript(t){
@@ -941,7 +953,7 @@ function akteText(d){
   add("Rolle",d.rolle);add("Organisation",d.organisation);add("Phase",PHASES[phaseOf(d)-1].name);if(phaseOf(d)===6)add("Ausgang",ausgangLabel(d.ausgang));
   add("Erstkontakt",d.kontaktDatum&&fmtShort(d.kontaktDatum));add("Anliegen",d.anliegen);add("Zielbild",d.ziel);add("Stärken",d.staerken);
   add("Auftraggeber",d.auftraggeber);add("Vertraulichkeitsabrede",d.vertraulichkeit);
-  const ss=sessions(d);if(ss.length){L.push("","Termine:");ss.forEach(s=>L.push("- "+fmtShort(s.datum)+" ("+(s.art||"Sitzung")+")"+(s.thema?": "+s.thema:"")+(s.methode?" · "+s.methode:"")+(s.aha?" · Aha: "+s.aha:"")+(s.beitrag?" · Eigener Beitrag: "+s.beitrag:"")+(s.transfer?" · Vereinbarung: "+s.transfer:"")+(s.skala!==""&&s.skala!=null?" · Skala "+s.skala:"")))}
+  const ss=sessions(d);if(ss.length){L.push("","Termine:");ss.forEach(s=>L.push("- "+fmtShort(s.datum)+" ("+(s.art||"Sitzung")+")"+(s.thema?": "+s.thema:"")+(s.methode?" · "+s.methode:"")+(s.aha?" · Aha: "+s.aha:"")+(s.beitrag?" · Eigener Beitrag: "+s.beitrag:"")+(s.nachhoeren?" · Beim Nachhören: "+s.nachhoeren:"")+(s.transfer?" · Vereinbarung: "+s.transfer:"")+(s.skala!==""&&s.skala!=null?" · Skala "+s.skala:"")))}
   const mo=Object.entries(d.reiss||{}).filter(([,v])=>v);if(mo.length){L.push("");add("Motive",mo.map(([m,v])=>m+" "+(STUFEN.find(s=>s[0]===v)||["",v])[1]).join(", "))}
   add("Deutung der Motive",d.reissNotiz);
   L.push("","Notizen des Coachs:");add("Hypothesen",d.hypothesen);add("Innere Bühne",d.innenleben);add("Resonanz",d.resonanz);add("Notizen",d.notizen);
@@ -1013,7 +1025,7 @@ document.addEventListener("click",e=>{
     patch(S.open,d=>{
       ["rolle","organisation","quelle","anliegen","ziel","auftraggeber","agKontakt","agErwartung","vertraulichkeit","rhythmus","staerken","bilanz","hypothesen","innenleben","resonanz","notizen","reissNotiz","abschlussbrief","ausgangNotiz","rechnungAn","naechsterTermin"].forEach(k=>{if(k in d)d[k]=""});
       d.name="Anonym "+d.id.slice(0,4).toUpperCase();d.reiss={};
-      (d.sitzungen||[]).forEach(s=>{s.thema="";s.aha="";s.transfer="";s.beitrag=""});
+      (d.sitzungen||[]).forEach(s=>{s.thema="";s.aha="";s.transfer="";s.beitrag="";s.nachhoeren=""});
       (d.agTermine||[]).forEach(x=>{x.ergebnis=""});
       d.anonymisiert=todayISO();d.checks=Object.assign({},d.checks,{loeschen:true});
     },{drawer:true,now:true});
@@ -1073,11 +1085,13 @@ document.addEventListener("input",e=>{
   if(t.dataset.f){const f=t.dataset.f,num=t.type==="number";patch(S.open,d=>{d[f]=num?(t.value===""?"":+t.value):t.value})}
   else if(t.dataset.af){const k=t.dataset.af;patch(S.open,d=>{d.abrechnung=Object.assign({},d.abrechnung);d.abrechnung[k]=t.value===""?"":+t.value})}
   else if(t.dataset.ppreis){const pid=t.dataset.ppreis;patch(S.open,d=>{const k=(d.pakete||[]).find(x=>x.id===pid);if(k)k.preis=t.value===""?"":+t.value})}
+  else if(t.dataset.snach){const sid=t.dataset.snach;patch(S.open,d=>{const s=(d.sitzungen||[]).find(x=>x.id===sid);if(s)s.nachhoeren=t.value})}
   else if(t.dataset.agerg){const aid=t.dataset.agerg;patch(S.open,d=>{const x=(d.agTermine||[]).find(y=>y.id===aid);if(x)x.ergebnis=t.value})}
 });
 document.addEventListener("change",e=>{
   const t=e.target;
   if(t.dataset.trans){readTranscript(t);return}
+  if(t.dataset.sgel&&S.open){const sid=t.dataset.sgel,v=t.checked;t.closest("label").classList.toggle("done",v);patch(S.open,d=>{const s=(d.sitzungen||[]).find(x=>x.id===sid);if(s)s.aufnahmeGeloescht=v});return}
   if(t.dataset.chk&&S.open){const k=t.dataset.chk;patch(S.open,d=>{d.checks=d.checks||{};d.checks[k]=t.checked},{drawer:true});return}
   if((t.dataset.af||t.dataset.ppreis)&&S.open){renderDrawer();return}
   if(t.dataset.f&&S.open){flush(S.open);if(t.dataset.f==="ausgang"){renderDrawer();return}const h=document.getElementById("d-h"),d=S.docs.get(S.open);if(h&&d&&t.dataset.f==="name")h.textContent=d.name||"Ohne Namen"}
