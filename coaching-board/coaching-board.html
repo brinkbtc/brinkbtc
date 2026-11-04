@@ -174,6 +174,33 @@ textarea.brief{min-height:300px;font-size:15px}
 .filebtn{cursor:pointer}
 .talk .st{font-size:13px;color:var(--ink-2)}
 .talk .st.err{color:var(--red)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{position:relative;display:inline-flex;cursor:pointer}
+.chip input{position:absolute;opacity:0;width:1px;height:1px}
+.chip span{border:1px solid var(--rule);border-radius:var(--r);padding:5px 9px;font-size:13px;background:var(--paper);color:var(--ink-2)}
+.chip input:checked+span{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.chip input:focus-visible+span{outline:2px solid var(--red);outline-offset:2px}
+fieldset.fk{border:0;padding:0;margin:0;min-width:0}
+fieldset.fk legend{font-size:13px;font-weight:600;color:var(--ink-2);padding:0;margin-bottom:6px}
+fieldset.fk legend .hint{font-weight:400}
+.srs{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.tloop{border:1px solid var(--ink);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--paper)}
+.tloop p{margin:0}
+.gas,.kar{border-top:1px solid var(--rule);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.gas-st{display:flex;flex-direction:column;gap:6px;padding-top:8px}
+.gas summary{cursor:pointer;font-size:13px;color:var(--ink-2)}
+.seg button.gv{min-width:44px}
+pre.msg{white-space:pre-wrap;font:15px/1.5 var(--body);background:var(--wash);padding:12px;margin:0}
+.lead{font-size:17px;line-height:1.45;margin:0}
+.fkgrid{display:grid;grid-template-columns:minmax(110px,auto) 1fr auto;gap:6px 12px;align-items:center;font-size:14px}
+.fkgrid .dots{display:flex;gap:3px;flex-wrap:wrap}
+.fkgrid .dots i{width:10px;height:10px;background:var(--wash-2)}
+.fkgrid .dots i.on{background:var(--ink)}
+.fkgrid .n{color:var(--mute);font-variant-numeric:tabular-nums}
+.plist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.plist li{font-size:15px;line-height:1.45}
+.plist .lbl{font-weight:600;color:var(--ink-2)}
+.card-acts{display:flex;flex-wrap:wrap;gap:6px}
 
 .sess{display:flex;flex-direction:column;gap:10px}
 .s-item{border-top:1px solid var(--rule);padding-top:12px;display:grid;grid-template-columns:64px 1fr;gap:4px 14px}
@@ -291,6 +318,7 @@ dialog::backdrop{background:var(--scrim)}
   <form class="dlg" id="form-quick" method="dialog">
     <h2 id="dlg-quick-h">Schnellnotiz</h2>
     <p class="hint" id="q-who"></p>
+    <div id="q-tloop"></div>
     <div id="q-talk"></div>
     <div class="grid2">
       <div class="fld"><label for="q-datum">Datum</label><input id="q-datum" type="date"></div>
@@ -299,7 +327,8 @@ dialog::backdrop{background:var(--scrim)}
     </div>
     <div class="fld"><label for="q-thema">Thema</label><input id="q-thema" placeholder="Worum ging es wirklich?"></div>
     <div class="fld"><label for="q-aha">Aha-Moment</label><textarea id="q-aha" placeholder="Der Satz, bei dem es klick gemacht hat"></textarea></div>
-    <div class="fld"><label for="q-transfer">Vereinbarung bis zum nächsten Mal</label><input id="q-transfer" placeholder="Was probiert sie im Alltag aus?"></div>
+    <div class="fld"><label for="q-transfer">Vereinbarung bis zum nächsten Mal</label><input id="q-transfer" placeholder="Was wird im Alltag ausprobiert?"></div>
+    <div id="q-extra"></div>
     <div class="row"><button class="btn ghost" type="button" id="q-cancel">Abbrechen</button><button class="btn red" type="submit">Speichern</button></div>
   </form>
 </dialog>
@@ -321,29 +350,35 @@ dialog::backdrop{background:var(--scrim)}
 const PHASES=[
  {n:1,name:"Erstkontakt",sub:"Anfrage & erste Resonanz",
   checks:[["anfrage","Anfrage mit Datum und Quelle notiert"],["rueck","Innerhalb von 48 Stunden zurückgemeldet"],["termin","Termin fürs Erstgespräch steht"]],
-  fragen:["Wer hat den Impuls gesetzt: die Person selbst oder jemand anderes?","Warum meldet sie sich genau jetzt, nicht vor einem halben Jahr?","Was hat mich an der Anfrage sofort angesprochen, was irritiert?"]},
+  fragen:["Wer hat den Impuls gesetzt: die Person selbst oder jemand anderes?","Warum kommt die Anfrage genau jetzt, nicht vor einem halben Jahr?","Was hat mich an der Anfrage sofort angesprochen, was irritiert?"]},
  {n:2,name:"Erstgespräch",sub:"Chemie, Anliegen, Passung",
-  checks:[["eigenwort","Anliegen in ihren eigenen Worten festgehalten"],["passung","Passung geprüft: Coaching, Beratung oder Therapie?"],["chemie","Chemie stimmt, auf beiden Seiten"],["rahmen","Rahmen erklärt: Vertraulichkeit, Ablauf, Honorar"],["angebot","Angebot verschickt"]],
-  fragen:["Ist das ein Coaching-Anliegen, oder braucht es etwas anderes?","Was wäre anders, wenn das Thema gelöst ist? Woran würde das Team es merken?","Spricht hier die Person, oder spricht ihre Rolle?"]},
+  checks:[["eigenwort","Anliegen in eigenen Worten des Klienten festgehalten"],["passung","Passung geprüft: Coaching, Beratung oder Therapie?"],["chemie","Chemie stimmt, auf beiden Seiten"],["rahmen","Rahmen erklärt: Vertraulichkeit, Ablauf, Honorar"],["angebot","Angebot verschickt"]],
+  fragen:["Ist das ein Coaching-Anliegen, oder braucht es etwas anderes?","Was wäre anders, wenn das Thema gelöst ist? Woran würde das Team es merken?","Spricht hier die Person, oder spricht die Rolle?"]},
  {n:3,name:"Auftrag",sub:"Ziel & Kontrakt",
-  checks:[["ziel","Zielbild konkret und beobachtbar formuliert"],["dreieck","Dreieckskontrakt mit Auftraggeber geklärt (falls Firma zahlt)"],["umfang","Anzahl Sitzungen und Rhythmus vereinbart"],["vertrag","Vereinbarung unterschrieben"],["start","Startwert auf der Skala erhoben"]],
-  fragen:["Wessen Ziel ist das: ihres, das der Führungskraft oder das der Organisation?","Was darf auf keinen Fall passieren?","Woran merkt sie selbst, dass sich das Coaching gelohnt hat?"]},
+  checks:[["ziel","Zielbild konkret formuliert, Teilziele mit Stufen beschrieben (Reiter Entwicklung)"],["karussell","Auftragskarussell: Erwartungen aller Beteiligten geklärt (Reiter Auftrag)"],["dreieck","Dreieckskontrakt mit Auftraggeber geklärt (falls Firma zahlt)"],["umfang","Anzahl Sitzungen und Rhythmus vereinbart"],["vertrag","Coaching-Vereinbarung unterschrieben (Entwurf im Überblick)"],["start","Startwert auf der Skala erhoben"]],
+  fragen:["Wessen Ziel ist das: das eigene, das der Führungskraft oder das der Organisation?","Was darf auf keinen Fall passieren?","Woran merkt die Person selbst, dass sich das Coaching gelohnt hat?"]},
  {n:4,name:"Prozess",sub:"Sitzungen & Transfer",
   checks:[["doku","Jede Sitzung kurz dokumentiert"],["transfer","Transferaufgaben nachgehalten"],["halbzeit","Zwischenbilanz zur Halbzeit gezogen"],["auftrag_ok","Auftrag noch stimmig? Bei Bedarf neu kontrahiert"]],
-  fragen:["Arbeiten wir noch am vereinbarten Auftrag oder am Thema hinter dem Thema?","Wo übernehme ich gerade mehr Verantwortung als sie?","Welche Stärke hat sie seit dem letzten Mal gezeigt, ohne es selbst zu merken?"]},
+  fragen:["Arbeiten wir noch am vereinbarten Auftrag oder am Thema hinter dem Thema?","Wo übernehme ich gerade mehr Verantwortung als mein Gegenüber?","Welche Stärke hat sich seit dem letzten Mal gezeigt, ohne dass die Person es selbst bemerkt hat?"]},
  {n:5,name:"Abschluss",sub:"Ziel erreicht? Bilanz ziehen",
   checks:[["ziel_erreicht","Klient sagt selbst: Mein Ziel ist erreicht"],["abgleich","Zielbild mit dem Ist abgeglichen"],["skala_end","Abschlusswert auf der Skala erhoben"],["mitnehmen","Erkenntnisse gesichert: Was nehme ich mit?"],["brief","Abschlussbrief übergeben (Reiter Entwicklung)"],["ag_abschluss","Abschluss mit dem Auftraggeber geführt (falls Dreieck)"],["feedback","Feedback zum Prozess eingeholt"],["rechnung","Rechnung gestellt"]],
-  fragen:["Wer erklärt das Ziel für erreicht: sie selbst oder ihr Kontingent?","Was hat sie selbst bewirkt, und wie machen wir das sichtbar?","Woran wird sie in drei Monaten merken, dass es noch wirkt?"]},
+  fragen:["Wer erklärt das Ziel für erreicht: der Klient selbst oder das Kontingent?","Was hat die Person selbst bewirkt, und wie machen wir das sichtbar?","Woran wird die Person in drei Monaten merken, dass es noch wirkt?"]},
  {n:6,name:"Abgeschlossen",sub:"Ausgang festhalten, die Tür bleibt offen",
-  checks:[["tuer","Follow-up angesprochen: Sie kann jederzeit wieder buchen"],["stimme","Stimme für die Website angefragt (mit Einverständnis)"],["loeschen","Unterlagen nach Frist gelöscht oder archiviert"]],
-  fragen:["Was habe ich in diesem Prozess über mich als Coach gelernt?","Woran würde sie merken, dass es Zeit für ein Follow-up ist?","Was würde ich beim nächsten Mal früher ansprechen?"]}
+  checks:[["tuer","Follow-up angesprochen: Wiederkommen ist jederzeit möglich"],["stimme","Stimme für die Website angefragt (mit Einverständnis)"],["loeschen","Unterlagen nach Frist gelöscht oder archiviert"]],
+  fragen:["Was habe ich in diesem Prozess über mich als Coach gelernt?","Woran würde die Person merken, dass es Zeit für ein Follow-up ist?","Was würde ich beim nächsten Mal früher ansprechen?"]}
 ];
 const METHODEN=["Skalierungsfrage","Inneres Team","Werte- und Entwicklungsquadrat","Kommunikationsquadrat","Riemann-Thomann-Kreuz","Reiss Motivation Profile","Systemische Aufstellung","Zirkuläre Fragen","Wunderfrage","Ressourcenarbeit","TZI: Ich-Wir-Es-Globe","Rollenspiel / Probehandeln","Arbeit am Glaubenssatz","Freies Gespräch"];
 const MOTIVE=[["Macht","Einfluss, Verantwortung, führen"],["Unabhängigkeit","Selbstständigkeit, Freiraum"],["Neugier","Wissen, Verstehen, Lernen"],["Anerkennung","Bestätigung, dazugehören"],["Ordnung","Struktur, Planung, Stabilität"],["Sparen","Sammeln, Ressourcen bewahren"],["Ehre","Prinzipien, Loyalität, Tradition"],["Idealismus","Fairness, Gerechtigkeit, Sinn"],["Beziehungen","Kontakt, Geselligkeit"],["Familie","Fürsorge, eigene Familie"],["Status","Ansehen, Exklusivität"],["Rache","Wettbewerb, Kampf, sich durchsetzen"],["Schönheit","Ästhetik, Sinnlichkeit"],["Essen","Genuss, Kulinarik"],["Körperliche Aktivität","Bewegung, Fitness"],["Ruhe","Entspannung, Sicherheit"]];
 const STUFEN=[["niedrig","weniger wichtig"],["mittel","situativ"],["hoch","sehr wichtig"]];
+const FAKTOREN=[["wert","Wertschätzung","Wertschätzung und emotionale Unterstützung"],["affekt","Gefühle aktiviert","Affektaktivierung: Das Thema wurde emotional spürbar"],["problem","Problemreflexion","Ergebnisorientierte Problemreflexion"],["ziel","Zielklärung","Zielklärung"],["ressource","Ressourcen","Ressourcenaktivierung"],["umsetzung","Umsetzung","Umsetzungsunterstützung"],["selbst","Selbstreflexion","Ergebnisorientierte Selbstreflexion"]];
+const SRS=[["b","Gehört gefühlt"],["z","Unsere Themen"],["a","Art des Arbeitens"],["g","Insgesamt"]];
+const GAS=[[-2,"−2","deutlich weniger als erwartet"],[-1,"−1","weniger als erwartet"],[0,"0","erwartetes Ergebnis"],[1,"+1","mehr als erwartet"],[2,"+2","deutlich mehr als erwartet"]];
+const gasLbl=v=>(GAS.find(g=>g[0]===v)||[0,"?"])[1];
+const KAR_WER=["Klient selbst","Führungskraft","HR / Personalentwicklung","Geschäftsführung","Team","Kolleginnen und Kollegen","Partner:in / Familie"];
+const TSTAT=[["ja","Umgesetzt"],["teil","Teilweise"],["nein","Nicht umgesetzt"]];
 const AUSGAENGE=[["ziel","Ziel erreicht"],["kein-auftrag","Kein Auftrag zustande gekommen"],["uebergeben","Übergeben (z. B. Therapie, andere Beratung)"],["vorzeitig","Vorzeitig beendet"]];
 const ausgangLabel=k=>(AUSGAENGE.find(a=>a[0]===k)||AUSGAENGE[0])[1];
-const NACHHOER=["Welches Ohr hatte ich offen: Sache, Beziehung, Selbstkundgabe oder Appell? Welches hätte es gebraucht?","Welches Wort kam mehrmals, und habe ich es aufgegriffen?","Wo hat sie innegehalten, gelacht, das Tempo gewechselt?","Wo habe ich unterbrochen oder eine Lösung angeboten?","Was höre ich jetzt, das ich im Raum nicht gehört habe?"];
+const NACHHOER=["Welches Ohr hatte ich offen: Sache, Beziehung, Selbstkundgabe oder Appell? Welches hätte es gebraucht?","Welches Wort kam mehrmals, und habe ich es aufgegriffen?","Wo gab es Pausen, Lachen, einen Tempowechsel?","Wo habe ich unterbrochen oder eine Lösung angeboten?","Was höre ich jetzt, das ich im Raum nicht gehört habe?"];
 const IMPULSE=["Was habe ich beim Nachhören über mein eigenes Zuhören gelernt?","Welches Muster begegnet mir diese Woche zum zweiten Mal?","Bei wem habe ich gerade mehr Energie als der Klient selbst?","Wo habe ich zuletzt eine Methode benutzt, um einer Begegnung auszuweichen?","Welche Klientin erinnert mich an jemanden, und was macht das mit mir?"];
 
 /* ---------- Zustand ---------- */
@@ -361,6 +396,7 @@ const fmtDT=iso=>{if(!iso)return"";const d=new Date(iso);if(isNaN(d))return"";co
 const fmtShort=iso=>{const d=new Date(iso);return isNaN(d)?"":d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"2-digit"})};
 const uid=()=>Math.random().toString(36).slice(2,10);
 const sessions=d=>(d.sitzungen||[]).slice().sort((a,b)=>(a.datum||"").localeCompare(b.datum||""));
+const vn=d=>{const n=(d.name||"").trim(),f=n.split(/\s+/)[0]||"";return !n?"die Person":(f.length<=2||f.endsWith("."))?n:f};
 const phaseOf=d=>Math.min(6,Math.max(1,+d.phase||1));
 const isDreieck=d=>!!(d.auftraggeber&&!/selbst/i.test(d.auftraggeber));
 const nextAG=d=>(d.agTermine||[]).filter(t=>daysFrom(t.datum)>=0).sort((a,b)=>a.datum.localeCompare(b.datum))[0];
@@ -368,6 +404,10 @@ const eur=n=>{const v=Math.round((+n||0)*100)/100;return v.toLocaleString("de-DE
 const quarterStart=()=>{const n=new Date();return new Date(n.getFullYear(),Math.floor(n.getMonth()/3)*3,1)};
 const quarterEnd=()=>{const n=new Date(),e=new Date(n.getFullYear(),Math.floor(n.getMonth()/3)*3+3,0);return e.getFullYear()+"-"+String(e.getMonth()+1).padStart(2,"0")+"-"+String(e.getDate()).padStart(2,"0")};
 const held=d=>sessions(d).filter(s=>s.art!=="Ausfall");
+const hasSrs=s=>!!(s&&s.srs&&SRS.every(([k])=>s.srs[k]!==""&&s.srs[k]!=null));
+const srsSum=s=>SRS.reduce((x,[k])=>x+(+s.srs[k]||0),0);
+const cleanQ=t=>String(t||"").trim().replace(/^[„“"]+|[„“"]+$/g,"");
+function lastTransferOpen(d){const hs=held(d),l=hs[hs.length-1];return l&&l.transfer&&!l.transferStatus?l:null}
 const brutto=r=>(+r.betrag||0)*(1+(+r.ust||0)/100);
 function quarterRange(off){const n=new Date(),q=Math.floor(n.getMonth()/3)+off,s=new Date(n.getFullYear(),q*3,1),e=new Date(n.getFullYear(),q*3+3,0);return {s,e,label:"Q"+(Math.floor(s.getMonth()/3)+1)+" "+s.getFullYear()}}
 function allInvoices(){const out=[];S.docs.forEach(d=>(d.rechnungen||[]).forEach(r=>out.push({r,d})));return out}
@@ -419,6 +459,13 @@ function flags(d){
     else if(daysFrom(quarterEnd())<=14)f.push({w:1,t:"Rechnung bis "+fmtShort(quarterEnd())+": "+eur(o.sum)});
   }
   if((d.sitzungen||[]).some(s=>s.nachhoeren&&!s.aufnahmeGeloescht&&daysFrom(s.datum)<=-14))f.push({w:0,t:"Aufnahme auf dem iPhone löschen?"});
+  const ts=ss.filter(s=>s.transferStatus).slice(-3);
+  if(ts.length===3&&ts.every(s=>s.transferStatus!=="ja"))f.push({w:1,t:"Drei Vereinbarungen nicht umgesetzt: Wessen Vereinbarung ist das?"});
+  const fb=ss.filter(hasSrs);
+  if(fb.length){const l=fb[fb.length-1];
+    if(srsSum(l)<36)f.push({w:1,t:"Sitzungsfeedback "+srsSum(l)+" von 40: ansprechen"});
+    else if(fb.length>=3){const [a,b,c]=fb.slice(-3),down=SRS.filter(([k])=>+c.srs[k]<+b.srs[k]&&+b.srs[k]<+a.srs[k]);if(down.length)f.push({w:0,t:"Feedback sinkt: "+down.map(x=>x[1]).join(", ")})}
+  }
   const unpaid=(d.rechnungen||[]).filter(r=>!r.bezahlt&&daysFrom(r.datum)<=-30);
   if(unpaid.length)f.push({w:1,t:"Zahlung offen: "+eur(unpaid.reduce((x,r)=>x+brutto(r),0))});
   return f;
@@ -488,7 +535,7 @@ function renderWeek(){
     (d.agTermine||[]).forEach(t=>{if(t.datum&&inWeek(t.datum))items.push({dt:t.datum,id:d.id,t:d.name,ag:1})});
   });
   items.sort((a,b)=>a.dt.localeCompare(b.dt));
-  el.innerHTML=`<div class="week"><span class="wl">Nächste 7 Tage</span>${items.length?items.map(i=>`<button type="button" data-open="${esc(i.id)}"><b>${esc(fmtDT(i.dt))}</b> · ${esc(i.t||"Ohne Namen")}${i.ag?" mit Auftraggeber":""}</button>`).join(""):`<span class="hint">Keine Termine eingetragen.</span>`}</div>`;
+  el.innerHTML=`<div class="week"><span class="wl">Nächste 7 Tage</span>${items.length?items.map(i=>{const k=daysFrom(i.dt);return `<button type="button" data-prep="${esc(i.id)}" title="Vorbereitung öffnen"><b>${esc(fmtDT(i.dt))}</b> · ${esc(i.t||"Ohne Namen")}${i.ag?" mit Auftraggeber":k>=1&&k<=3?" · Impuls schicken?":""}</button>`}).join(""):`<span class="hint">Keine Termine eingetragen.</span>`}</div>`;
 }
 
 /* ---------- Board ---------- */
@@ -518,7 +565,7 @@ function card(d){
     ${d.anliegen?`<span class="an">${esc(d.anliegen)}</span>`:""}
     ${fl.map(f=>`<span class="flag${f.w?"":" info"}">${esc(f.t)}</span>`).join("")}
     ${meta?`<span class="meta">${meta}</span>`:""}
-    ${S.canWrite&&p>=3&&p<=5?`<button class="qn" type="button" data-quick="${esc(d.id)}">+ Schnellnotiz</button>`:""}
+    ${S.canWrite&&p>=3&&p<=5?`<span class="card-acts"><button class="qn" type="button" data-prep="${esc(d.id)}">Vorbereiten</button><button class="qn" type="button" data-quick="${esc(d.id)}">+ Schnellnotiz</button></span>`:""}
   </div>`;
 }
 function renderBoard(){
@@ -559,7 +606,7 @@ function phaseBox(d){
     ${p===6?`<div class="fld"><label for="f-ausgang">Ausgang</label><select id="f-ausgang" data-f="ausgang"${S.canWrite?"":" disabled"}>${AUSGAENGE.map(([k,l])=>`<option value="${k}"${(d.ausgang||"ziel")===k?" selected":""}>${l}</option>`).join("")}</select></div>
     ${d.ausgang&&d.ausgang!=="ziel"?fld("f-ausgangnotiz","Was lerne ich daraus?","ausgangNotiz",d.ausgangNotiz,"area","Was hat gefehlt? Was würde ich im nächsten Erstgespräch anders fragen?"):""}`:""}
     ${p===6?`<div class="reopen"><span class="ph">Kommt wieder</span>
-      <p class="hint">Bucht sie ein Follow-up, geht die Akte mit allen Notizen zurück in den Prozess. Das Kontingent wächst um die gebuchten Termine.${(d.wiederaufnahmen||[]).length?" Bisher: "+d.wiederaufnahmen.map(w=>esc(fmtShort(w.datum))+" ("+w.anzahl+" "+(w.anzahl==1?"Termin":"Termine")+")").join(", ")+".":""}</p>
+      <p class="hint">Wird ein Follow-up gebucht, geht die Akte mit allen Notizen zurück in den Prozess. Das Kontingent wächst um die gebuchten Termine.${(d.wiederaufnahmen||[]).length?" Bisher: "+d.wiederaufnahmen.map(w=>esc(fmtShort(w.datum))+" ("+w.anzahl+" "+(w.anzahl==1?"Termin":"Termine")+")").join(", ")+".":""}</p>
       ${S.canWrite?`<div class="row-inline"><div class="fld"><label for="r-anzahl">Gebuchte Follow-up-Termine</label><input id="r-anzahl" type="number" min="1" max="20" value="1"></div><button class="btn small red" data-act="reopen" type="button">Follow-up buchen</button></div>`:""}
     </div>`:""}
   </div>
@@ -568,7 +615,7 @@ function phaseBox(d){
 function tabUeberblick(d){
   return `${phaseBox(d)}
   <div class="sec"><h3>Stärken</h3>
-    ${fld("f-staerken","Was sie schon kann","staerken",d.staerken,"area","Stärken, die sich zeigen. Sie gehören nach vorn, nicht ans Ende.")}
+    ${fld("f-staerken","Was "+esc(vn(d))+" schon kann","staerken",d.staerken,"area","Stärken, die sich zeigen. Sie gehören nach vorn, nicht ans Ende.")}
   </div>
   <div class="sec"><h3>Person & Kontext</h3><div class="grid2">
     ${fld("f-name","Name oder Kürzel","name",d.name)}
@@ -577,14 +624,143 @@ function tabUeberblick(d){
     ${fld("f-quelle","Wie kam der Kontakt?","quelle",d.quelle)}
     ${fld("f-kontakt","Erstkontakt am","kontaktDatum",d.kontaktDatum,"date")}
     ${fld("f-termin","Nächster Termin","naechsterTermin",d.naechsterTermin,"datetime-local")}
+    <div class="fld"><label for="f-anrede">Anrede in Nachrichten</label><select id="f-anrede" data-f="anredeForm"${S.canWrite?"":" disabled"}><option value="sie"${d.anredeForm!=="du"?" selected":""}>Sie</option><option value="du"${d.anredeForm==="du"?" selected":""}>Du</option></select></div>
   </div></div>
   <div class="sec"><h3>Anliegen & Auftrag</h3>
-    ${fld("f-anliegen","Anliegen, in ihren Worten","anliegen",d.anliegen,"area","Was hat sie wörtlich gesagt?")}
-    ${fld("f-ziel","Zielbild","ziel",d.ziel,"area","Woran merkt sie und woran merkt ihr Umfeld, dass es gelungen ist?")}
+    ${fld("f-anliegen","Anliegen, in eigenen Worten","anliegen",d.anliegen,"area","Was wurde wörtlich gesagt?")}
+    ${fld("f-ziel","Zielbild","ziel",d.ziel,"area","Woran merken die Person und ihr Umfeld, dass es gelungen ist?")}
     <div class="grid2">
       ${fld("f-plan","Gebuchte Termine (Kontingent)","sitzungenPlan",d.sitzungenPlan,"number","z. B. 6")}
       ${fld("f-rhythmus","Rhythmus und Format","rhythmus",d.rhythmus,"text","z. B. alle 3 Wochen, 90 Min., Präsenz")}
     </div>
+  </div>
+  <div class="sec"><h3>Coaching-Vereinbarung</h3>
+    <p class="hint">Ein Entwurf aus Anliegen, Zielbild, Teilzielen, Umfang, Honorar, Absageregel, Vertraulichkeit und Einwilligung zu Sprachmemos. Der Klient bestätigt so das eigene Ziel. Kein Rechtsrat: Gleiche den Text mit deinen AGB ab.</p>
+    ${fld("f-absage","Absageregel","absageRegel",d.absageRegel,"area","z. B. Termine können bis 48 Stunden vorher kostenfrei verschoben werden. Danach wird das Ausfallhonorar fällig.")}
+    ${S.canWrite?`<div class="phase-nav">${S.confirmSess==="verein"?`<span class="confirm">Deine Änderungen werden überschrieben. <button class="btn small red" data-act="verein-yes" type="button">Neu erstellen</button><button class="btn small ghost" data-sdel-no type="button">Abbrechen</button></span>`
+      :`<button class="btn small" data-act="verein" type="button">${d.vereinbarung?"Entwurf neu erstellen":"Entwurf erstellen"}</button>${d.vereinbarung?`<button class="btn small ghost" data-act="verein-copy" type="button">Text kopieren</button>`:""}`}</div>`:""}
+    ${d.vereinbarung?`<div class="fld"><label for="f-verein">Vereinbarung (frei bearbeitbar)</label><textarea id="f-verein" class="brief" data-f="vereinbarung"${S.canWrite?"":" disabled"}>${esc(d.vereinbarung)}</textarea></div>`:""}
+  </div>`;
+}
+function transferBox(d){
+  const l=lastTransferOpen(d);if(!l||!S.canWrite)return "";
+  return `<div class="tloop"><span class="ph">Letzte Vereinbarung · ${esc(fmtShort(l.datum))}</span>
+    <p>${esc(l.transfer)}</p>
+    <div class="fld"><label for="tl-${esc(l.id)}">Was ist daraus geworden? Was hat geholfen, was hat gehindert?</label><input id="tl-${esc(l.id)}"></div>
+    <div class="phase-nav">${TSTAT.map(([k,t])=>`<button class="btn small ghost" type="button" data-tstat="${k}" data-tsid="${esc(l.id)}" data-tcid="${esc(d.id)}">${t}</button>`).join("")}</div>
+  </div>`;
+}
+function fkChips(px){
+  return `<fieldset class="fk"><legend>Wirkfaktoren heute <span class="hint">(nach Greif, antippen was deutlich da war)</span></legend>
+    <div class="chips">${FAKTOREN.map(([k,l,t])=>`<label class="chip" title="${esc(t)}"><input type="checkbox" name="${px}fk" value="${k}"><span>${esc(l)}</span></label>`).join("")}</div></fieldset>`;
+}
+function srsInputs(px){
+  return `<fieldset class="fk"><legend>Feedback zur Sitzung, 0 bis 10 <span class="hint">(in den letzten zwei Minuten fragen, nach der Session Rating Scale)</span></legend>
+    <div class="srs">${SRS.map(([k,l])=>`<div class="fld"><label for="${px}srs-${k}">${l}</label><input id="${px}srs-${k}" type="number" min="0" max="10" step="1"></div>`).join("")}</div></fieldset>`;
+}
+const readFk=px=>[...document.querySelectorAll(`input[name="${px}fk"]:checked`)].map(i=>i.value);
+function readSrs(px){const o={};let any=false;SRS.forEach(([k])=>{const el=$("#"+px+"srs-"+k),v=el?el.value:"";o[k]=v===""?"":Math.max(0,Math.min(10,Math.round(+v)));if(v!=="")any=true});return any?o:null}
+function tabVorbereitung(d){
+  const hs=held(d),l=hs[hs.length-1],plan=+d.sitzungenPlan||0,r=d.reiss||{};
+  const fb=[...hs].reverse().find(hasSrs),nach=[...hs].reverse().find(s=>s.nachhoeren),tz=(d.teilziele||[]).filter(t=>t.titel);
+  const hi=MOTIVE.filter(([m])=>r[m]==="hoch").map(([m])=>m),lo=MOTIVE.filter(([m])=>r[m]==="niedrig").map(([m])=>m);
+  const withFk=hs.filter(s=>(s.faktoren||[]).length);
+  let rare="";if(withFk.length>=2){const c=FAKTOREN.map(([k,lb])=>[lb,withFk.filter(s=>s.faktoren.includes(k)).length]),m=Math.min(...c.map(x=>x[1]));rare=c.filter(x=>x[1]===m).map(x=>x[0]).join(", ")+" ("+m+" von "+withFk.length+")"}
+  const kar=(d.karussell||[]).filter(k=>k.wer||k.erwartung);
+  const li=(lb,v)=>v?`<li><span class="lbl">${lb}:</span> ${esc(v)}</li>`:"";
+  return `<p class="hint">Sitzung ${hs.length+1}${plan?" von "+plan:""}${d.naechsterTermin?" · "+esc(fmtDT(d.naechsterTermin)):""}. Alles Wichtige auf einen Blick, für die zwei Minuten vor dem Termin.</p>
+  ${transferBox(d)}
+  <div class="sec"><h3>Wohin</h3>
+    ${d.ziel?`<p class="lead">${esc(d.ziel)}</p>`:`<p class="hint">Noch kein Zielbild eingetragen.</p>`}
+    ${tz.length?`<ul class="plist">${tz.map(t=>{const v=t.verlauf&&t.verlauf.length?t.verlauf[t.verlauf.length-1].wert:null;return `<li><span class="lbl">${v==null?"–":gasLbl(v)}</span> ${esc(t.titel)}${(t.stufen||{})[0]?` <span class="hint">· Ziel: ${esc(t.stufen[0])}</span>`:""}</li>`}).join("")}</ul>`:""}
+  </div>
+  <div class="sec"><h3>Letztes Mal${l?" · "+esc(fmtShort(l.datum)):""}</h3>
+    ${l?`<ul class="plist">${li("Thema",l.thema)}${li("Aha",l.aha)}${li("Vereinbarung",l.transfer?l.transfer+(l.transferStatus?" ("+(TSTAT.find(x=>x[0]===l.transferStatus)||["",""])[1]+")":""):"")}${li("Eigener Beitrag",l.beitrag)}${fb?li("Feedback",SRS.map(([k,lb])=>lb+" "+fb.srs[k]).join(" · ")+" = "+srsSum(fb)+"/40"):""}${nach?li("Beim Nachhören ("+fmtShort(nach.datum)+")",nach.nachhoeren):""}</ul>`:`<p class="hint">Das wird die erste Sitzung.</p>`}
+  </div>
+  <div class="sec"><h3>Im Hinterkopf</h3><ul class="plist">
+    ${li("Hypothesen",d.hypothesen&&d.hypothesen.length>240?d.hypothesen.slice(0,240)+" …":d.hypothesen)}
+    ${hi.length||lo.length?li("Motive",[...hi.map(m=>m+" sehr wichtig"),...lo.map(m=>m+" weniger wichtig")].join(", ")):""}
+    ${rare?li("Bisher selten",rare):""}
+    ${kar.map(k=>li(k.wer||"Jemand",[k.erwartung,k.weiss?"weiß: "+k.weiss:""].filter(Boolean).join(" · "))).join("")}
+    ${li("Stärken",d.staerken)}
+  </ul>${!d.hypothesen&&!hi.length&&!lo.length&&!rare&&!kar.length&&!d.staerken?`<p class="hint">Hypothesen, Motive, Wirkfaktoren und Erwartungen erscheinen hier, sobald sie eingetragen sind.</p>`:""}</div>
+  <div class="sec"><h3>Meine Frage für heute</h3>
+    ${fld("f-frage","Mit welcher Frage gehe ich hinein?","frageHeute",d.frageHeute,"area","Nicht die Methode, sondern die Neugier.")}
+  </div>
+  <div class="sec"><h3>Vorbereitungsimpuls für ${esc(vn(d))}</h3>
+    <p class="hint">Zwei Tage vorher verschicken, per Mail oder Messenger. Die Antwort kommt hier unter „Meine Frage für heute“ gut unter.</p>
+    <pre class="msg">${esc(impulsText(d))}</pre>
+    <div><button class="btn small ghost" data-act="impuls-copy" type="button">Text kopieren</button></div>
+  </div>`;
+}
+function impulsText(d){
+  const du=d.anredeForm==="du",t=d.naechsterTermin&&daysFrom(d.naechsterTermin)>=0?fmtDT(d.naechsterTermin):"";
+  return du?`Hallo ${vn(d)},\n\n${t?"wir sehen uns am "+t+".":"bald sehen wir uns wieder."} Eine Frage vorab, gern in einem Satz: Was soll nach unserer nächsten Stunde anders sein als vorher?\n\nHerzlich\nSascha`
+    :`Guten Tag ${d.name||""},\n\n${t?"wir sehen uns am "+t+".":"bald sehen wir uns wieder."} Eine Frage vorab, gern in einem Satz: Was soll nach unserer nächsten Stunde anders sein als vorher?\n\nHerzliche Grüße\nSascha Brink`;
+}
+function rueckblickText(d,s){
+  const du=d.anredeForm==="du",nt=d.naechsterTermin&&daysFrom(d.naechsterTermin)>=0?fmtDT(d.naechsterTermin):"",wann=s.datum===todayISO()?" heute":" am "+fmtShort(s.datum);
+  const p=[du?"Hallo "+vn(d)+",":"Guten Tag "+(d.name||"")+","];
+  p.push(du?"danke für unsere Sitzung"+wann+". Damit es nicht im Alltag verloren geht:":"danke für unsere Sitzung"+wann+". Damit es nicht im Alltag verloren geht:");
+  if(s.aha)p.push((du?"Dein Satz:":"Ihr Satz:")+"\n„"+cleanQ(s.aha)+"“");
+  if(s.transfer)p.push((du?"Deine Vereinbarung bis zum nächsten Mal:":"Ihre Vereinbarung bis zum nächsten Mal:")+"\n"+s.transfer.trim());
+  if(nt)p.push("Unser nächster Termin: "+nt+".");
+  p.push(du?"Herzlich\nSascha":"Herzliche Grüße\nSascha Brink");
+  return p.join("\n\n");
+}
+function vereinbarungEntwurf(d){
+  const a=d.abrechnung||{},tz=(d.teilziele||[]).filter(t=>t.titel),ust0=lastUst()===0,uz=ust0?" (ohne Umsatzsteuer)":" zuzüglich gesetzlicher Umsatzsteuer";
+  const L=["COACHING-VEREINBARUNG","","zwischen "+(d.name||"[Name]")+(d.organisation?", "+d.organisation:""),"und Sascha Brink, br!nk btc, Hamburg",""];
+  L.push("1. Anliegen",(d.anliegen||"[Anliegen in eigenen Worten]").trim(),"");
+  L.push("2. Ziel",(d.ziel||"[Zielbild]").trim());
+  if(tz.length){L.push("","Woran wir erkennen, dass es gelungen ist:");tz.forEach(t=>L.push("– "+t.titel+((t.stufen||{})[0]?": "+t.stufen[0]:"")))}
+  L.push("","3. Umfang und Rahmen",(d.sitzungenPlan?d.sitzungenPlan:"[Anzahl]")+" Termine"+(d.rhythmus?", "+d.rhythmus:"")+".");
+  if(a.modell==="einzeln"&&a.satz)L.push("Honorar: "+eur(a.satz)+" pro Termin"+uz+".");
+  else if(a.modell==="paket"&&(d.pakete||[]).length){const k=d.pakete[d.pakete.length-1];L.push("Honorar: "+(k.preis!==""?eur(k.preis):"[Preis]")+" für "+k.termine+" Termine"+uz+".")}
+  else L.push("Honorar: [Honorar].");
+  L.push("Rechnung an: "+String(d.rechnungAn||(isDreieck(d)?d.auftraggeber:d.name)||"[Empfänger]").replace(/\.$/,"")+". Abgerechnet wird spätestens zum Quartalsende.");
+  L.push("","4. Absagen",(d.absageRegel||"Termine können bis 48 Stunden vorher kostenfrei verschoben werden. Bei späterer Absage wird ein Ausfallhonorar"+(a.ausfall!==""&&a.ausfall!=null?" von "+eur(a.ausfall):"")+" fällig.").trim());
+  L.push("","5. Vertraulichkeit","Alles, was im Coaching besprochen wird, bleibt vertraulich."+(isDreieck(d)?" Für den Auftraggeber ("+d.auftraggeber+") gilt: "+((d.vertraulichkeit||"[Vertraulichkeitsabrede]").trim()):""));
+  L.push("","6. Sprachaufnahmen","☐ Ich bin einverstanden, dass Sitzungen als Sprachmemo aufgezeichnet werden. Die Aufnahme dient ausschließlich der Nachbereitung durch Sascha Brink, wird nicht weitergegeben und nach dem Nachhören gelöscht. Ich kann diese Einwilligung jederzeit widerrufen.","☐ Ich bin nicht einverstanden.");
+  L.push("","7. Eigenverantwortung","Coaching ist keine Therapie. Für Entscheidungen und ihre Umsetzung bleibe ich selbst verantwortlich.");
+  L.push("","","Ort, Datum ______________________","","______________________          ______________________",(d.name||"Klient")+"                         Sascha Brink");
+  return L.join("\n");
+}
+function gasBlock(d){
+  const tz=d.teilziele||[],dis=S.canWrite?"":" disabled";
+  return `<div class="sec"><h3>Teilziele · Zielerreichung</h3>
+    <p class="hint">Goal Attainment Scaling: Beim Kontrakt für jedes Teilziel beschreiben, wie −2 bis +2 konkret aussehen. 0 ist das vereinbarte Ergebnis, die Ausgangslage liegt meist bei −1 oder −2. In Zwischenbilanz und Abschluss gemeinsam einstufen.</p>
+    ${tz.map(t=>{const v=t.verlauf||[],cur=v.length?v[v.length-1].wert:null,st=t.stufen||{};return `<div class="gas">
+      <div class="fld"><label for="gt-${esc(t.id)}">Teilziel</label><input id="gt-${esc(t.id)}" data-gas="${esc(t.id)}" data-gf="titel" value="${esc(t.titel)}"${dis}></div>
+      <details${st[0]?"":" open"}><summary>Stufen beschreiben${st[0]?" ✓":""}</summary><div class="gas-st">${GAS.map(([g,l,txt])=>`<div class="fld"><label for="gs-${esc(t.id)}-${g}">${l} · ${txt}</label><input id="gs-${esc(t.id)}-${g}" data-gas="${esc(t.id)}" data-gf="${g}" value="${esc(st[g])}" placeholder="${g===0?"Woran merkt man es konkret?":g===-1||g===-2?"z. B. die heutige Lage":""}"${dis}></div>`).join("")}</div></details>
+      <div class="row-inline"><span class="ph">Stand heute</span><span class="seg" role="group" aria-label="Stand ${esc(t.titel)}">${GAS.map(([g,l])=>`<button type="button" class="gv${cur===g?" on":""}" data-gasset="${esc(t.id)}" data-gv="${g}" title="${esc(st[g]||"")}" aria-pressed="${cur===g}"${dis}>${l}</button>`).join("")}</span></div>
+      ${v.length?`<p class="hint">Verlauf: ${v.map(x=>esc(fmtShort(x.datum))+" "+gasLbl(x.wert)).join(" → ")}</p>`:""}
+      ${S.canWrite?(S.confirmSess==="g:"+t.id?`<span class="confirm">Teilziel löschen? <button class="btn small red" data-gasdel-yes="${esc(t.id)}" type="button">Ja</button><button class="btn small ghost" data-sdel-no type="button">Nein</button></span>`:`<div><button class="linkish" data-gasdel="${esc(t.id)}" type="button">Teilziel löschen</button></div>`):""}
+    </div>`}).join("")}
+    ${S.canWrite?`<div class="row-inline"><div class="fld" style="flex:1;min-width:200px"><label for="gas-neu">Neues Teilziel</label><input id="gas-neu" placeholder="z. B. Kundenbetreuung liegt bei zwei Senior-Leuten"></div><button class="btn small" data-act="gas-add" type="button">Hinzufügen</button></div>`:""}
+  </div>`;
+}
+function fkView(d){
+  const hs=held(d),withFk=hs.filter(s=>(s.faktoren||[]).length);
+  if(!withFk.length)return `<p class="hint">Sobald du bei Sitzungen Wirkfaktoren antippst, zeigt sich hier das Muster über den Prozess.</p>`;
+  const rows=FAKTOREN.map(([k,l,t])=>({l,t,n:hs.filter(s=>(s.faktoren||[]).includes(k)).length,dots:hs.map((s,i)=>`<i class="${(s.faktoren||[]).includes(k)?"on":""}" title="S${i+1}"></i>`).join("")}));
+  const m=Math.min(...rows.map(r=>r.n)),rare=rows.filter(r=>r.n===m).map(r=>r.l);
+  return `<div class="fkgrid">${rows.map(r=>`<span title="${esc(r.t)}">${esc(r.l)}</span><span class="dots" aria-label="${r.n} von ${hs.length} Sitzungen">${r.dots}</span><span class="n">${r.n}/${hs.length}</span>`).join("")}</div>
+    <p class="hint">Bisher am seltensten: ${esc(rare.join(", "))}. Passt das zu diesem Prozess, oder fehlt da etwas?</p>`;
+}
+function karussellBlock(d){
+  const k=d.karussell||[],dis=S.canWrite?"":" disabled";
+  return `<div class="sec"><h3>Auftragskarussell</h3>
+    <p class="hint">Nach Arist von Schlippe: Wer hat welche Erwartung an dieses Coaching? Widersprüchliche Erwartungen sind der häufigste stille Grund, warum Prozesse stocken.</p>
+    ${k.map(x=>`<div class="kar"><div class="grid2">
+      <div class="fld"><label for="kw-${esc(x.id)}">Wer</label><input id="kw-${esc(x.id)}" list="kar-wer" data-kar="${esc(x.id)}" data-kf="wer" value="${esc(x.wer)}"${dis}></div>
+      <div class="fld"><label for="ke-${esc(x.id)}">Erwartet</label><input id="ke-${esc(x.id)}" data-kar="${esc(x.id)}" data-kf="erwartung" value="${esc(x.erwartung)}"${dis}></div>
+      <div class="fld"><label for="kk-${esc(x.id)}">Weiß vom Coaching</label><input id="kk-${esc(x.id)}" data-kar="${esc(x.id)}" data-kf="weiss" value="${esc(x.weiss)}" placeholder="nichts, dass es stattfindet, die Ziele …"${dis}></div>
+      <div class="fld"><label for="kh-${esc(x.id)}">Meine Haltung dazu</label><input id="kh-${esc(x.id)}" data-kar="${esc(x.id)}" data-kf="haltung" value="${esc(x.haltung)}"${dis}></div>
+    </div>${S.canWrite?(S.confirmSess==="k:"+x.id?`<span class="confirm">Entfernen? <button class="btn small red" data-kardel-yes="${esc(x.id)}" type="button">Ja</button><button class="btn small ghost" data-sdel-no type="button">Nein</button></span>`:`<div><button class="linkish" data-kardel="${esc(x.id)}" type="button">Entfernen</button></div>`):""}</div>`).join("")}
+    ${S.canWrite?`<div><button class="btn small" data-act="kar-add" type="button">+ Erwartungsträger</button></div>`:""}
+    ${k.length>=2?`<ul class="qs"><li>Welche zwei Erwartungen widersprechen sich, und wer weiß davon?</li></ul>`:""}
+    <datalist id="kar-wer">${KAR_WER.map(w=>`<option value="${esc(w)}">`).join("")}</datalist>
   </div>`;
 }
 function tabSitzungen(d){
@@ -596,18 +772,22 @@ function tabSitzungen(d){
       <span class="th">${esc(aus?"Ausfall"+(s.thema?": "+s.thema:""):(s.thema||"Ohne Thema"))}</span>
       ${s.methode||s.art==="Follow-up"?`<span class="mt">${esc([s.art==="Follow-up"?"Follow-up":"",s.methode].filter(Boolean).join(" · "))}</span>`:""}
       ${s.aha?`<p><span class="lbl">Aha:</span> ${esc(s.aha)}</p>`:""}
-      ${s.beitrag?`<p><span class="lbl">Ihr eigener Beitrag:</span> ${esc(s.beitrag)}</p>`:""}
-      ${s.transfer?`<p><span class="lbl">Bis zum nächsten Mal:</span> ${esc(s.transfer)}</p>`:""}
+      ${s.beitrag?`<p><span class="lbl">Eigener Beitrag:</span> ${esc(s.beitrag)}</p>`:""}
+      ${s.transfer?`<p><span class="lbl">Bis zum nächsten Mal:</span> ${esc(s.transfer)}${s.transferStatus?` <span class="tag">${esc((TSTAT.find(x=>x[0]===s.transferStatus)||["",""])[1])}</span>`:""}</p>`:""}
+      ${s.transferNotiz?`<p><span class="lbl">Daraus geworden:</span> ${esc(s.transferNotiz)}</p>`:""}
+      ${(s.faktoren||[]).length?`<span class="mt">Wirkfaktoren: ${esc(FAKTOREN.filter(f=>s.faktoren.includes(f[0])).map(f=>f[1]).join(" · "))}</span>`:""}
+      ${hasSrs(s)?`<span class="mt">Feedback: ${esc(SRS.map(([k])=>s.srs[k]).join(" · "))} = ${srsSum(s)}/40</span>`:""}
       ${aus?"":`<details class="nach"${s.nachhoeren&&!s.aufnahmeGeloescht?" open":""}><summary>Beim Nachhören${s.nachhoeren?" ✓":""}</summary>
         <ul class="qs small">${NACHHOER.map(q=>`<li>${esc(q)}</li>`).join("")}</ul>
-        <div class="fld"><label for="nach-${esc(s.id)}">Was ist mir beim Nachhören aufgefallen?</label><textarea id="nach-${esc(s.id)}" data-snach="${esc(s.id)}" placeholder="Über sie, über mich, über unser Gespräch"${dis}>${esc(s.nachhoeren||"")}</textarea></div>
+        <div class="fld"><label for="nach-${esc(s.id)}">Was ist mir beim Nachhören aufgefallen?</label><textarea id="nach-${esc(s.id)}" data-snach="${esc(s.id)}" placeholder="Über mein Gegenüber, über mich, über unser Gespräch"${dis}>${esc(s.nachhoeren||"")}</textarea></div>
         <label class="chk${s.aufnahmeGeloescht?" done":""}"><input type="checkbox" id="gel-${esc(s.id)}" data-sgel="${esc(s.id)}"${s.aufnahmeGeloescht?" checked":""}${dis}><span>Aufnahme und Transkript auf dem iPhone gelöscht</span></label>
       </details>`}
-      <div class="s-foot">${s.skala!==""&&s.skala!=null?`<span class="sk">Skala ${esc(s.skala)}/10</span>`:""}${s.rechnung?`<span class="tag">abgerechnet</span>`:""}
+      <div class="s-foot">${s.skala!==""&&s.skala!=null?`<span class="sk">Skala ${esc(s.skala)}/10</span>`:""}${s.rechnung?`<span class="tag">abgerechnet</span>`:""}${!aus&&(s.aha||s.transfer)?`<button class="linkish" data-rb="${esc(s.id)}" type="button">Rückblick für ${esc(vn(d))}</button>`:""}
         ${S.canWrite?(S.confirmSess===s.id?`<span class="confirm">Löschen? <button class="btn small red" data-sdel-yes="${esc(s.id)}" type="button">Ja</button><button class="btn small ghost" data-sdel-no type="button">Nein</button></span>`:`<button class="linkish" data-sdel="${esc(s.id)}" type="button">Löschen</button>`):""}</div>
     </div></div>`}).join("");
   return `<div class="sec"><h3>Sitzungen ${plan?`· ${k} von ${plan}`:`· ${k}`}</h3>
     ${S.canWrite?`<div class="addbox">
+      ${transferBox(d)}
       ${talkBox("s-")}
       <div class="grid2">
         <div class="fld"><label for="s-datum">Datum</label><input id="s-datum" type="date" value="${todayISO()}"></div>
@@ -617,8 +797,10 @@ function tabSitzungen(d){
       <div class="fld"><label for="s-thema">Thema der Sitzung</label><input id="s-thema" placeholder="Worum ging es wirklich?"></div>
       <div class="fld"><label for="s-methode">Methode</label><input id="s-methode" list="methoden" placeholder="Wählen oder frei eintragen"></div>
       <div class="fld"><label for="s-aha">Aha-Moment</label><textarea id="s-aha" placeholder="Der Satz, bei dem es klick gemacht hat"></textarea></div>
-      <div class="fld"><label for="s-beitrag">Was hat sie heute selbst beigetragen?</label><textarea id="s-beitrag" placeholder="Ihre Idee, ihr Mut, ihre Klarheit. Stärken sichtbar machen."></textarea></div>
-      <div class="fld"><label for="s-transfer">Vereinbarung bis zum nächsten Mal</label><textarea id="s-transfer" placeholder="Was probiert sie im Alltag aus?"></textarea></div>
+      <div class="fld"><label for="s-beitrag">Was hat ${esc(vn(d))} heute selbst beigetragen?</label><textarea id="s-beitrag" placeholder="Eine Idee, Mut, Klarheit. Stärken sichtbar machen."></textarea></div>
+      <div class="fld"><label for="s-transfer">Vereinbarung bis zum nächsten Mal</label><textarea id="s-transfer" placeholder="Was wird im Alltag ausprobiert?"></textarea></div>
+      ${fkChips("s-")}
+      ${srsInputs("s-")}
       <div><button class="btn" data-act="add-sess" type="button">Sitzung speichern</button></div>
     </div>`:""}
     <div class="sess">${items||`<p class="hint">Noch keine Sitzung dokumentiert. Die erste Notiz legt den Grundstein für die Entwicklungskurve.</p>`}</div>
@@ -644,7 +826,7 @@ function tabEntwicklung(d){
   const vals=[];if(d.startwert!==""&&d.startwert!=null)vals.push(+d.startwert);
   sessions(d).forEach(s=>{if(s.skala!==""&&s.skala!=null)vals.push(+s.skala)});
   const st=vals[0],cur=vals[vals.length-1],delta=vals.length>1?cur-st:null;
-  return `<div class="sec"><h3>Entwicklung auf der Skala</h3>
+  return `${gasBlock(d)}<div class="sec"><h3>Entwicklung auf der Skala</h3>
     <p class="hint">„Auf einer Skala von 0 bis 10: Wo stehen Sie heute mit Ihrem Anliegen?“ Startwert aus dem Kontrakt, dann ein Wert pro Sitzung.</p>
     <div class="kpis">
       <div class="stat"><span class="n">${st!=null?st:"–"}</span><span class="l">Start</span></div>
@@ -657,12 +839,13 @@ function tabEntwicklung(d){
       ${fld("f-zielwert","Zielwert (0–10)","zielwert",d.zielwert,"number")}
     </div>
   </div>
+  <div class="sec"><h3>Wirkfaktoren im Prozess</h3>${fkView(d)}</div>
   <div class="sec"><h3>Bilanz</h3>
-    ${fld("f-bilanz","Bilanz in ihren Worten","bilanz",d.bilanz,"area","Was hat sich verändert? Was nimmt sie mit? (Abschlussgespräch)")}
+    ${fld("f-bilanz","Bilanz in eigenen Worten","bilanz",d.bilanz,"area","Was hat sich verändert? Was wird mitgenommen? (Abschlussgespräch)")}
   </div>
   <div class="sec"><h3>Abschlussbrief</h3>
-    <p class="hint">Ein Brief zum Mitnehmen. Er nutzt nur Zielbild, ihre Aha-Sätze, ihren Skalenweg, ihre Stärken und ihre Bilanz. Hypothesen, Resonanz und Motive bleiben draußen. Lies ihn, bevor du ihn weitergibst.</p>
-    ${S.canWrite?`<div class="row-inline"><div class="fld"><label for="b-anrede">Anrede</label><select id="b-anrede"><option value="du">Du</option><option value="sie">Sie</option></select></div>
+    <p class="hint">Ein Brief zum Mitnehmen. Er nutzt nur Zielbild, Teilziele, die Aha-Sätze, den Skalenweg, die Stärken und die Bilanz des Klienten. Hypothesen, Resonanz und Motive bleiben draußen. Lies ihn, bevor du ihn weitergibst.</p>
+    ${S.canWrite?`<div class="row-inline"><div class="fld"><label for="b-anrede">Anrede</label><select id="b-anrede"><option value="du"${d.anredeForm==="du"?" selected":""}>Du</option><option value="sie"${d.anredeForm!=="du"?" selected":""}>Sie</option></select></div>
       ${S.confirmSess==="brief"?`<span class="confirm">Deine Änderungen am Brief werden überschrieben. <button class="btn small red" data-act="brief-yes" type="button">Neu erstellen</button><button class="btn small ghost" data-sdel-no type="button">Abbrechen</button></span>`
       :`<button class="btn small" data-act="brief" type="button">${d.abschlussbrief?"Entwurf neu erstellen":"Entwurf aus der Akte erstellen"}</button>${d.abschlussbrief?`<button class="btn small ghost" data-act="brief-copy" type="button">Text kopieren</button>`:""}`}</div>`:""}
     ${d.abschlussbrief?`<div class="fld"><label for="f-brief">Brief (frei bearbeitbar)</label><textarea id="f-brief" class="brief" data-f="abschlussbrief"${S.canWrite?"":" disabled"}>${esc(d.abschlussbrief)}</textarea></div>`:""}
@@ -706,7 +889,7 @@ function tabDreieck(d){
       <div class="fld"><label for="agerg-${esc(t.id)}">Ergebnis</label><textarea id="agerg-${esc(t.id)}" data-agerg="${esc(t.id)}" placeholder="Was wurde vereinbart? Was erfährt der Klient davon?"${S.canWrite?"":" disabled"}>${esc(t.ergebnis||"")}</textarea></div>
       <div class="s-foot">${S.canWrite?(S.confirmSess==="ag:"+t.id?`<span class="confirm">Löschen? <button class="btn small red" data-agdel-yes="${esc(t.id)}" type="button">Ja</button><button class="btn small ghost" data-sdel-no type="button">Nein</button></span>`:`<button class="linkish" data-agdel="${esc(t.id)}" type="button">Löschen</button>`):""}</div>
     </div></div>`}).join("");
-  return `<div class="sec"><h3>Dreieckskontrakt</h3>
+  return `${karussellBlock(d)}<div class="sec"><h3>Dreieckskontrakt</h3>
     <p class="hint">Für Coachings, die eine Organisation bezahlt. Termine mit dem Auftraggeber finden auch ohne den Klienten statt. Er sollte vorher wissen, dass es sie gibt und worüber gesprochen wird.</p>
     <div class="grid2">
       ${fld("f-auftraggeber","Auftraggeber","auftraggeber",d.auftraggeber,"text","z. B. HR-Leitung, oder: zahlt selbst")}
@@ -781,7 +964,7 @@ function tabAbrechnung(d){
   <div class="sec"><h3>Gestellte Rechnungen · ${(d.rechnungen||[]).length}</h3>
     <div class="sess">${rech||`<p class="hint">Noch keine Rechnung.</p>`}</div></div>`;
 }
-const TABS=[["ueberblick","Überblick",tabUeberblick],["sitzungen","Sitzungen",tabSitzungen],["dreieck","Dreieck",tabDreieck],["abrechnung","Abrechnung",tabAbrechnung],["entwicklung","Entwicklung",tabEntwicklung],["motive","Motive",tabMotive],["reflexion","Reflexion",tabReflexion]];
+const TABS=[["ueberblick","Überblick",tabUeberblick],["vorbereitung","Vorbereitung",tabVorbereitung],["sitzungen","Sitzungen",tabSitzungen],["dreieck","Auftrag",tabDreieck],["abrechnung","Abrechnung",tabAbrechnung],["entwicklung","Entwicklung",tabEntwicklung],["motive","Motive",tabMotive],["reflexion","Reflexion",tabReflexion]];
 function panelShell(title,body){
   return `<div class="scrim" data-act="close"></div>
   <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="d-h">
@@ -897,6 +1080,7 @@ Antworte ausschließlich mit einem JSON-Objekt mit genau diesen Feldern:
 "beitrag": was der Klient heute selbst beigetragen hat (eine Idee, Mut, Klarheit), ein Satz. Sonst "".
 "transfer": die Vereinbarung bis zum nächsten Mal, ein bis zwei Sätze. Sonst "".
 "skala": der Skalenwert 0 bis 10 als Zahl, nur wenn er ausdrücklich genannt wird. Sonst null.
+"faktoren": Liste der Wirkfaktoren, die im Text deutlich erkennbar sind, als Schlüssel aus: ${FAKTOREN.map(f=>f[0]+" ("+f[2]+")").join(", ")}. Sonst [].
 "staerken": eine beobachtete Stärke des Klienten, ein Satz. Sonst "".
 
 Regeln: Nichts erfinden, was nicht im Text steht. Keine Diagnosen, keine Gesundheitsdetails. Keine Namen anderer Personen, ersetze sie durch ihre Rolle (zum Beispiel „ein Schichtleiter“). Deutsch, knapp, wertschätzend.
@@ -917,6 +1101,7 @@ async function ordnen(px,btn){
     const put=(f,v)=>{const el=$("#"+px+f);if(!el||v==null||v==="")return;if(el.value.trim()){kept++;return}el.value=v};
     ["thema","methode","aha","beitrag","transfer"].forEach(f=>put(f,typeof r[f]==="string"?r[f].trim():""));
     if(typeof r.skala==="number"&&r.skala>=0&&r.skala<=10)put("skala",r.skala);
+    if(Array.isArray(r.faktoren))r.faktoren.forEach(k=>{const el=document.querySelector(`input[name="${px}fk"][value="${k}"]`);if(el)el.checked=true});
     talkStatus(px,"Vorschlag eingetragen. Bitte prüfen und anpassen, dann speichern."+(kept?" Was du schon ausgefüllt hattest, habe ich nicht überschrieben.":""));
     const vb=$("#"+px+"vorschlag");
     if(vb&&typeof r.staerken==="string"&&r.staerken.trim()){S.stVorschlag={id,text:r.staerken.trim()};vb.innerHTML=`<p class="hint">Beobachtete Stärke: „${esc(S.stVorschlag.text)}“ <button class="linkish" type="button" data-addst="1">Zu Stärken hinzufügen</button></p>`}
@@ -940,6 +1125,8 @@ function briefEntwurf(d,du){
   if(aha.length)p.push((du?"Sätze, die du unterwegs gefunden hast:":"Sätze, die Sie unterwegs gefunden haben:")+"\n"+aha.join("\n"));
   if(vals.length>1)p.push(du?`Auf deiner eigenen Skala bist du von ${vals[0]} auf ${vals[vals.length-1]} gegangen. Diesen Weg bist du gegangen, nicht ich.`
                            :`Auf Ihrer eigenen Skala sind Sie von ${vals[0]} auf ${vals[vals.length-1]} gegangen. Diesen Weg sind Sie gegangen, nicht ich.`);
+  const tzE=(d.teilziele||[]).filter(t=>t.titel&&(t.verlauf||[]).length&&t.verlauf[t.verlauf.length-1].wert>=0);
+  if(tzE.length)p.push((du?"Was du erreicht hast:":"Was Sie erreicht haben:")+"\n"+tzE.map(t=>"– "+t.titel).join("\n"));
   if(d.staerken)p.push((du?"Was ich an dir gesehen habe:":"Was ich an Ihnen gesehen habe:")+"\n"+d.staerken.trim());
   if(d.bilanz)p.push((du?"Deine Bilanz:":"Ihre Bilanz:")+"\n„"+clean(d.bilanz)+"“");
   p.push(du?"Wenn alte Muster zurückkommen, ist das kein Rückschritt, sondern ein Signal. Die Tür steht offen: Ein Follow-up ist jederzeit möglich."
@@ -956,6 +1143,8 @@ function akteText(d){
   const ss=sessions(d);if(ss.length){L.push("","Termine:");ss.forEach(s=>L.push("- "+fmtShort(s.datum)+" ("+(s.art||"Sitzung")+")"+(s.thema?": "+s.thema:"")+(s.methode?" · "+s.methode:"")+(s.aha?" · Aha: "+s.aha:"")+(s.beitrag?" · Eigener Beitrag: "+s.beitrag:"")+(s.nachhoeren?" · Beim Nachhören: "+s.nachhoeren:"")+(s.transfer?" · Vereinbarung: "+s.transfer:"")+(s.skala!==""&&s.skala!=null?" · Skala "+s.skala:"")))}
   const mo=Object.entries(d.reiss||{}).filter(([,v])=>v);if(mo.length){L.push("");add("Motive",mo.map(([m,v])=>m+" "+(STUFEN.find(s=>s[0]===v)||["",v])[1]).join(", "))}
   add("Deutung der Motive",d.reissNotiz);
+  const tz=(d.teilziele||[]).filter(t=>t.titel);if(tz.length){L.push("","Teilziele:");tz.forEach(t=>{const v=t.verlauf||[];L.push("- "+t.titel+((t.stufen||{})[0]?" (Ziel: "+t.stufen[0]+")":"")+(v.length?" · Verlauf: "+v.map(x=>fmtShort(x.datum)+" "+gasLbl(x.wert)).join(", "):""))})}
+  const kr=(d.karussell||[]).filter(k=>k.wer||k.erwartung);if(kr.length){L.push("","Auftragskarussell:");kr.forEach(k=>L.push("- "+(k.wer||"?")+": "+[k.erwartung,k.weiss?"weiß: "+k.weiss:"",k.haltung?"meine Haltung: "+k.haltung:""].filter(Boolean).join(" · ")))}
   L.push("","Notizen des Coachs:");add("Hypothesen",d.hypothesen);add("Innere Bühne",d.innenleben);add("Resonanz",d.resonanz);add("Notizen",d.notizen);
   add("Bilanz",d.bilanz);
   if((d.rechnungen||[]).length){L.push("","Rechnungen:");d.rechnungen.forEach(r=>L.push("- "+(r.nummer||"ohne Nummer")+" vom "+fmtShort(r.datum)+", "+eur(brutto(r))+(r.bezahlt?", bezahlt":"")))}
@@ -970,8 +1159,19 @@ function addSession(id,s){patch(id,d=>{d.sitzungen=(d.sitzungen||[]).concat(s);i
 /* ---------- Ereignisse ---------- */
 function setPhase(id,n){patch(id,d=>{d.phase=n;d.phaseSeit=d.phaseSeit||{};if(!d.phaseSeit[n])d.phaseSeit[n]=todayISO();if(n===6&&!d.ausgang)d.ausgang="ziel"},{drawer:true,now:true})}
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-quick],[data-ordnen],[data-addst],[data-open],[data-act],[data-phase],[data-tab],[data-motiv],[data-sdel],[data-sdel-yes],[data-sdel-no],[data-agdel],[data-agdel-yes],[data-modell],[data-pdel],[data-pdel-yes],[data-rdel],[data-rdel-yes],[data-paid],[data-jdel],[data-jdel-yes]");if(!t)return;
+  const t=e.target.closest("[data-quick],[data-ordnen],[data-addst],[data-open],[data-act],[data-phase],[data-tab],[data-motiv],[data-sdel],[data-sdel-yes],[data-sdel-no],[data-agdel],[data-agdel-yes],[data-modell],[data-pdel],[data-pdel-yes],[data-rdel],[data-rdel-yes],[data-paid],[data-jdel],[data-jdel-yes],[data-prep],[data-rb],[data-tstat],[data-gasset],[data-gasdel],[data-gasdel-yes],[data-kardel],[data-kardel-yes]");if(!t)return;
   if(t.dataset.quick){openQuick(t.dataset.quick);return}
+  if(t.dataset.prep){openDrawer(t.dataset.prep);S.tab="vorbereitung";renderDrawer();return}
+  if(t.dataset.rb&&S.open){const d=S.docs.get(S.open),s=d&&(d.sitzungen||[]).find(x=>x.id===t.dataset.rb);if(s)copyText(rueckblickText(d,s),"Rückblick");return}
+  if(t.dataset.tstat){const cid=t.dataset.tcid,sid=t.dataset.tsid,k=t.dataset.tstat,note=$("#tl-"+sid),nv=note?note.value.trim():"";
+    patch(cid,d=>{const s=(d.sitzungen||[]).find(x=>x.id===sid);if(s){s.transferStatus=k;if(nv)s.transferNotiz=nv}},{drawer:true,now:true});
+    const qt=$("#q-tloop");if(qt&&$("#dlg-quick").open)qt.innerHTML=`<p class="hint">Festgehalten: ${esc((TSTAT.find(x=>x[0]===k)||["",""])[1])}.</p>`;
+    setSave("Vereinbarung festgehalten");return}
+  if(t.dataset.gasset&&S.open){const gid=t.dataset.gasset,gv=+t.dataset.gv,td=todayISO();patch(S.open,d=>{const g=(d.teilziele||[]).find(x=>x.id===gid);if(!g)return;g.verlauf=g.verlauf||[];const l=g.verlauf[g.verlauf.length-1];if(l&&l.datum===td)l.wert=gv;else g.verlauf.push({datum:td,wert:gv})},{drawer:true,now:true});return}
+  if(t.dataset.gasdel){S.confirmSess="g:"+t.dataset.gasdel;renderDrawer();return}
+  if(t.dataset.gasdelYes){const gid=t.dataset.gasdelYes;S.confirmSess=null;patch(S.open,d=>{d.teilziele=(d.teilziele||[]).filter(x=>x.id!==gid)},{drawer:true,now:true});return}
+  if(t.dataset.kardel){S.confirmSess="k:"+t.dataset.kardel;renderDrawer();return}
+  if(t.dataset.kardelYes){const kid=t.dataset.kardelYes;S.confirmSess=null;patch(S.open,d=>{d.karussell=(d.karussell||[]).filter(x=>x.id!==kid)},{drawer:true,now:true});return}
   if(t.dataset.ordnen){ordnen(t.dataset.ordnen,t);return}
   if(t.dataset.addst&&S.stVorschlag){const v=S.stVorschlag;S.stVorschlag=null;t.closest("p").remove();
     if(S.docs.get(v.id))patch(v.id,d=>{d.staerken=(d.staerken?d.staerken.trim()+"\n":"")+v.text});setSave("Stärke übernommen");return}
@@ -1017,15 +1217,20 @@ document.addEventListener("click",e=>{
     const du=$("#b-anrede").value==="du";S.confirmSess=null;
     patch(S.open,x=>{x.abschlussbrief=briefEntwurf(x,du)},{drawer:true,now:true});
   }
+  else if(a==="gas-add"&&S.open){const ti=$("#gas-neu").value.trim();if(!ti){$("#gas-neu").focus();return}patch(S.open,d=>{d.teilziele=(d.teilziele||[]).concat({id:uid(),titel:ti,stufen:{},verlauf:[]})},{drawer:true,now:true})}
+  else if(a==="kar-add"&&S.open){patch(S.open,d=>{d.karussell=(d.karussell||[]).concat({id:uid(),wer:"",erwartung:"",weiss:"",haltung:""})},{drawer:true,now:true})}
+  else if((a==="verein"||a==="verein-yes")&&S.open){const d=S.docs.get(S.open);if(!d)return;if(a==="verein"&&d.vereinbarung){S.confirmSess="verein";renderDrawer();return}S.confirmSess=null;patch(S.open,x=>{x.vereinbarung=vereinbarungEntwurf(x)},{drawer:true,now:true})}
+  else if(a==="verein-copy"&&S.open){const d=S.docs.get(S.open);if(d)copyText(d.vereinbarung||"","Vereinbarung")}
+  else if(a==="impuls-copy"&&S.open){const d=S.docs.get(S.open);if(d)copyText(impulsText(d),"Impuls")}
   else if(a==="brief-copy"&&S.open){const d=S.docs.get(S.open);if(d)copyText(d.abschlussbrief||"","Brief")}
   else if(a==="export"&&S.open){const d=S.docs.get(S.open);if(d)copyText(akteText(d),"Akte")}
   else if(a==="anon-ask"){S.confirmDel="anon";renderDrawer()}
   else if(a==="anon-yes"&&S.open){
     S.confirmDel=false;
     patch(S.open,d=>{
-      ["rolle","organisation","quelle","anliegen","ziel","auftraggeber","agKontakt","agErwartung","vertraulichkeit","rhythmus","staerken","bilanz","hypothesen","innenleben","resonanz","notizen","reissNotiz","abschlussbrief","ausgangNotiz","rechnungAn","naechsterTermin"].forEach(k=>{if(k in d)d[k]=""});
+      ["rolle","organisation","quelle","anliegen","ziel","auftraggeber","agKontakt","agErwartung","vertraulichkeit","rhythmus","staerken","bilanz","hypothesen","innenleben","resonanz","notizen","reissNotiz","abschlussbrief","ausgangNotiz","rechnungAn","naechsterTermin","vereinbarung","frageHeute","absageRegel"].forEach(k=>{if(k in d)d[k]=""});
       d.name="Anonym "+d.id.slice(0,4).toUpperCase();d.reiss={};
-      (d.sitzungen||[]).forEach(s=>{s.thema="";s.aha="";s.transfer="";s.beitrag="";s.nachhoeren=""});
+      (d.sitzungen||[]).forEach(s=>{s.thema="";s.aha="";s.transfer="";s.beitrag="";s.nachhoeren="";s.transferNotiz=""});(d.teilziele||[]).forEach(g=>{g.titel="Teilziel";g.stufen={}});(d.karussell||[]).forEach(k=>{k.erwartung="";k.weiss="";k.haltung=""});
       (d.agTermine||[]).forEach(x=>{x.ergebnis=""});
       d.anonymisiert=todayISO();d.checks=Object.assign({},d.checks,{loeschen:true});
     },{drawer:true,now:true});
@@ -1075,7 +1280,7 @@ document.addEventListener("click",e=>{
   }
   else if(a==="add-sess"&&S.open){
     const v=id=>$(id).value.trim();
-    const s={id:uid(),art:v("#s-art"),datum:v("#s-datum")||todayISO(),thema:v("#s-thema"),methode:v("#s-methode"),aha:v("#s-aha"),beitrag:v("#s-beitrag"),transfer:v("#s-transfer"),skala:v("#s-skala")===""?"":Math.max(0,Math.min(10,+v("#s-skala")))};
+    const s={id:uid(),art:v("#s-art"),datum:v("#s-datum")||todayISO(),thema:v("#s-thema"),methode:v("#s-methode"),aha:v("#s-aha"),beitrag:v("#s-beitrag"),transfer:v("#s-transfer"),skala:v("#s-skala")===""?"":Math.max(0,Math.min(10,+v("#s-skala"))),faktoren:readFk("s-")};const sr=readSrs("s-");if(sr)s.srs=sr;
     if(s.art!=="Ausfall"&&!s.thema&&!s.aha&&!s.transfer&&s.skala===""){$("#s-thema").focus();setSave("Bitte mindestens ein Thema eintragen.",true);return}
     addSession(S.open,s);
   }
@@ -1085,6 +1290,8 @@ document.addEventListener("input",e=>{
   if(t.dataset.f){const f=t.dataset.f,num=t.type==="number";patch(S.open,d=>{d[f]=num?(t.value===""?"":+t.value):t.value})}
   else if(t.dataset.af){const k=t.dataset.af;patch(S.open,d=>{d.abrechnung=Object.assign({},d.abrechnung);d.abrechnung[k]=t.value===""?"":+t.value})}
   else if(t.dataset.ppreis){const pid=t.dataset.ppreis;patch(S.open,d=>{const k=(d.pakete||[]).find(x=>x.id===pid);if(k)k.preis=t.value===""?"":+t.value})}
+  else if(t.dataset.gas){const gid=t.dataset.gas,gf=t.dataset.gf;patch(S.open,d=>{const g=(d.teilziele||[]).find(x=>x.id===gid);if(!g)return;if(gf==="titel")g.titel=t.value;else{g.stufen=Object.assign({},g.stufen);g.stufen[gf]=t.value}})}
+  else if(t.dataset.kar){const kid=t.dataset.kar,kf=t.dataset.kf;patch(S.open,d=>{const k=(d.karussell||[]).find(x=>x.id===kid);if(k)k[kf]=t.value})}
   else if(t.dataset.snach){const sid=t.dataset.snach;patch(S.open,d=>{const s=(d.sitzungen||[]).find(x=>x.id===sid);if(s)s.nachhoeren=t.value})}
   else if(t.dataset.agerg){const aid=t.dataset.agerg;patch(S.open,d=>{const x=(d.agTermine||[]).find(y=>y.id===aid);if(x)x.ergebnis=t.value})}
 });
@@ -1104,7 +1311,7 @@ document.addEventListener("keydown",e=>{
 /* Schnellnotiz direkt von der Karte */
 function openQuick(id){
   const d=S.docs.get(id);if(!d||!S.canWrite)return;
-  S.quickId=id;$("#form-quick").reset();$("#q-talk").innerHTML=talkBox("q-");$("#q-who").textContent=(d.name||"Ohne Namen")+" · Sitzung "+(held(d).length+1)+((+d.sitzungenPlan)?" von "+d.sitzungenPlan:"");
+  S.quickId=id;$("#form-quick").reset();$("#q-talk").innerHTML=talkBox("q-");$("#q-tloop").innerHTML=transferBox(d);$("#q-extra").innerHTML=fkChips("q-")+srsInputs("q-");$("#q-who").textContent=(d.name||"Ohne Namen")+" · Sitzung "+(held(d).length+1)+((+d.sitzungenPlan)?" von "+d.sitzungenPlan:"");
   $("#q-datum").value=todayISO();$("#q-art").value=(d.wiederaufnahmen||[]).length?"Follow-up":"Sitzung";
   const dl=$("#dlg-quick");try{dl.showModal()}catch(_){dl.setAttribute("open","")}setTimeout(()=>$("#q-thema").focus(),0);
 }
@@ -1113,7 +1320,7 @@ $("#t-close").addEventListener("click",()=>$("#dlg-text").close());
 $("#form-quick").addEventListener("submit",e=>{
   e.preventDefault();const id=S.quickId;if(!id)return;
   const v=x=>$(x).value.trim();
-  const s={id:uid(),art:v("#q-art"),datum:v("#q-datum")||todayISO(),thema:v("#q-thema"),methode:"",aha:v("#q-aha"),beitrag:"",transfer:v("#q-transfer"),skala:v("#q-skala")===""?"":Math.max(0,Math.min(10,+v("#q-skala")))};
+  const s={id:uid(),art:v("#q-art"),datum:v("#q-datum")||todayISO(),thema:v("#q-thema"),methode:"",aha:v("#q-aha"),beitrag:"",transfer:v("#q-transfer"),skala:v("#q-skala")===""?"":Math.max(0,Math.min(10,+v("#q-skala"))),faktoren:readFk("q-")};const sr=readSrs("q-");if(sr)s.srs=sr;
   if(s.art!=="Ausfall"&&!s.thema&&!s.aha&&s.skala===""){$("#q-thema").focus();return}
   $("#dlg-quick").close();addSession(id,s);S.quickId=null;
 });
