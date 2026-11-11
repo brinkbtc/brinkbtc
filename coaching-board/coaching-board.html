@@ -390,6 +390,7 @@ dialog{border-radius:var(--r-lg);background:var(--paper);box-shadow:0 30px 80px 
       <div class="fld"><label for="n-quelle">Wie kam der Kontakt?</label>
         <select id="n-quelle"><option>Empfehlung</option><option>LinkedIn</option><option>Website</option><option>Auftrag über HR / Firma</option><option>Bestandskunde</option><option>Workshop / Vortrag</option><option>Sonstiges</option></select></div>
     </div>
+    <div class="fld"><label for="n-form">Form der Zusammenarbeit</label><select id="n-form"><option value="prozess">Coaching mit Ziel und Abschluss</option><option value="laufend">Laufende Begleitung ohne Enddatum</option></select></div>
     <div class="fld"><label for="n-anliegen">Erster Eindruck vom Anliegen</label><textarea id="n-anliegen" placeholder="In den Worten der Person, so wie es am Telefon kam"></textarea></div>
     <div class="row">
       <button class="btn ghost" type="button" id="n-cancel">Abbrechen</button>
@@ -481,6 +482,9 @@ const fmtShort=iso=>{const d=new Date(iso);return isNaN(d)?"":d.toLocaleDateStri
 const uid=()=>Math.random().toString(36).slice(2,10);
 const sessions=d=>(d.sitzungen||[]).slice().sort((a,b)=>(a.datum||"").localeCompare(b.datum||""));
 const vn=d=>{const n=(d.name||"").trim(),f=n.split(/\s+/)[0]||"";return !n?"die Person":(f.length<=2||f.endsWith("."))?n:f};
+const laufend=d=>d.form==="laufend";
+const planOf=d=>laufend(d)?0:(+d.sitzungenPlan||0);
+function standortFaellig(d){if(!laufend(d)||phaseOf(d)!==4)return false;const st=(d.standorte||[]).map(x=>x.datum).sort().pop(),hs=held(d),ref=st||(hs[0]&&hs[0].datum)||(d.phaseSeit||{})[4];const k=daysFrom(ref);return k!==null&&k<=-90}
 const phaseOf=d=>Math.min(6,Math.max(1,+d.phase||1));
 const isDreieck=d=>!!(d.auftraggeber&&!/selbst/i.test(d.auftraggeber));
 const nextAG=d=>(d.agTermine||[]).filter(t=>daysFrom(t.datum)>=0).sort((a,b)=>a.datum.localeCompare(b.datum))[0];
@@ -521,7 +525,7 @@ function offen(d){
 
 /* ---------- Handlungsbedarf ---------- */
 function flags(d){
-  const f=[],p=phaseOf(d),c=d.checks||{},ss=held(d),plan=+d.sitzungenPlan||0;
+  const f=[],p=phaseOf(d),c=d.checks||{},ss=held(d),plan=planOf(d);
   const nt=d.naechsterTermin, nd=daysFrom(nt);
   if(nt&&nd<0&&p<6) f.push({w:1,t:"Termin vorbei: nachtragen"});
   else if(nt&&nd===0) f.push({w:0,t:"Heute"+(nt.length>10?", "+new Date(nt).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):"")});
@@ -533,6 +537,7 @@ function flags(d){
     if(plan&&ss.length>=plan)f.push({w:0,t:"Kontingent aufgebraucht: nachbuchen oder Abschluss besprechen"});
     else if(plan&&ss.length>=Math.ceil(plan/2)&&!c.halbzeit)f.push({w:0,t:"Zeit für die Zwischenbilanz"});
   }
+  if(standortFaellig(d))f.push({w:0,t:"Zeit für eine Standortbestimmung"});
   const ag=d.agTermine||[];
   if(p<6&&ag.some(t=>{const k=daysFrom(t.datum);return k!==null&&k<0&&!t.ergebnis}))f.push({w:1,t:"Auftraggeber-Termin nachtragen"});
   ag.forEach(t=>{const k=daysFrom(t.datum);if(k!==null&&k>=0&&k<=2)f.push({w:0,t:"Auftraggeber "+(k===0?"heute":k===1?"morgen":"in 2 Tagen")})});
@@ -630,7 +635,7 @@ function matches(d){
   return h.includes(S.q.toLowerCase());
 }
 function card(d){
-  const ss=sessions(d),plan=+d.sitzungenPlan||0,p=phaseOf(d),fl=flags(d);
+  const ss=sessions(d),plan=planOf(d),p=phaseOf(d),fl=flags(d);
   const last=ss.filter(s=>s.skala!==""&&s.skala!=null).pop();
   let meta="";
   if(d.naechsterTermin&&p<6)meta+=`<span>Nächster Termin: ${esc(fmtDT(d.naechsterTermin))}</span>`;
@@ -639,12 +644,13 @@ function card(d){
   if(p===6&&(d.phaseSeit||{})[6])meta+=`<span>Abgeschlossen ${esc(fmtShort(d.phaseSeit[6]))}${wa.length?` · ${wa.length}× Follow-up gebucht`:""}</span>`;
   const ah=held(d).length;
   if(p>=4&&p<=5&&plan){let pips="";for(let i=0;i<plan;i++)pips+=`<i class="${i<ah?"on":""}"></i>`;meta+=`<span><span class="pips" aria-hidden="true">${pips}</span> ${ah}/${plan}</span>`}
+  if(laufend(d)&&p===4){meta+=`<span>${ah} ${ah===1?"Sitzung":"Sitzungen"}</span>`;const ot=(d.themen||[]).filter(x=>!x.erledigt).length;if(ot)meta+=`<span>${ot} ${ot===1?"Thema":"Themen"} im Speicher</span>`}
   if(p===6&&d.ausgang&&d.ausgang!=="ziel")meta+=`<span>${esc(ausgangLabel(d.ausgang))}</span>`;
   if(p>=3&&last)meta+=`<span>Skala ${esc(last.skala)}/10</span>`;
   if(p===1&&d.quelle)meta+=`<span>${esc(d.quelle)}</span>`;
   const of=offen(d);if(of.items.length&&of.sum)meta+=`<span>Offen: ${esc(eur(of.sum))}</span>`;
   return `<div class="card${S.open===d.id?" sel":""}" data-open="${esc(d.id)}" draggable="${S.canWrite}" role="button" tabindex="0">
-    <span class="nm">${esc(d.name||"Ohne Namen")}${wa.length&&p<6?` <span class="tag">Follow-up</span>`:""}${d.beispiel?` <span class="tag">Beispiel</span>`:""}</span>
+    <span class="nm">${esc(d.name||"Ohne Namen")}${laufend(d)&&p<6?` <span class="tag">Laufend</span>`:""}${wa.length&&p<6?` <span class="tag">Follow-up</span>`:""}${d.beispiel?` <span class="tag">Beispiel</span>`:""}</span>
     ${d.rolle||d.organisation?`<span class="ro">${esc([d.rolle,d.organisation].filter(Boolean).join(" · "))}</span>`:""}
     ${d.anliegen?`<span class="an">${esc(d.anliegen)}</span>`:""}
     ${fl.map(f=>`<span class="flag${f.w?"":" info"}">${esc(f.t)}</span>`).join("")}
@@ -683,8 +689,8 @@ function fld(id,label,field,val,type,ph,extra){
 function phaseBox(d){
   const p=phaseOf(d),ph=PHASES[p-1],c=d.checks||{};
   return `<div class="phase-box">
-    <span class="ph">Phase ${p} · ${ph.name}</span>
-    <div class="checks">${ph.checks.map(([k,t])=>`<label class="chk${c[k]?" done":""}"><input type="checkbox" id="c-${k}" data-chk="${k}"${c[k]?" checked":""}${S.canWrite?"":" disabled"}><span>${esc(t)}</span></label>`).join("")}</div>
+    <span class="ph">Phase ${p} · ${ph.name}${laufend(d)&&p===4?" · laufende Begleitung":""}</span>
+    <div class="checks">${ph.checks.filter(([k])=>!(laufend(d)&&k==="halbzeit")).map(([k,t])=>`<label class="chk${c[k]?" done":""}"><input type="checkbox" id="c-${k}" data-chk="${k}"${c[k]?" checked":""}${S.canWrite?"":" disabled"}><span>${esc(t)}</span></label>`).join("")}</div>
     ${S.canWrite?`<div class="phase-nav">${p>1?`<button class="btn small ghost" data-phase="${p-1}" type="button">← Zurück zu ${PHASES[p-2].name}</button>`:""}${p<6?`<button class="btn small" data-phase="${p+1}" type="button">Weiter zu ${PHASES[p].name} →</button>`:""}${p<6&&!S.confirmEnd?`<button class="linkish" data-act="end-ask" type="button">Anders beenden …</button>`:""}</div>`:""}
     ${S.canWrite&&p<6&&S.confirmEnd?`<div class="row-inline"><div class="fld"><label for="end-ausgang">Wie endet es?</label><select id="end-ausgang">${AUSGAENGE.filter(a=>a[0]!=="ziel").map(([k,l])=>`<option value="${k}"${(p<=3)===(k==="kein-auftrag")?" selected":""}>${l}</option>`).join("")}</select></div><button class="btn small red" data-act="end-yes" type="button">Nach „Abgeschlossen“</button><button class="btn small ghost" data-act="end-no" type="button">Abbrechen</button></div>`:""}
     ${p===6?`<div class="fld"><label for="f-ausgang">Ausgang</label><select id="f-ausgang" data-f="ausgang"${S.canWrite?"":" disabled"}>${AUSGAENGE.map(([k,l])=>`<option value="${k}"${(d.ausgang||"ziel")===k?" selected":""}>${l}</option>`).join("")}</select></div>
@@ -708,13 +714,14 @@ function tabUeberblick(d){
     ${fld("f-quelle","Wie kam der Kontakt?","quelle",d.quelle)}
     ${fld("f-kontakt","Erstkontakt am","kontaktDatum",d.kontaktDatum,"date")}
     ${fld("f-termin","Nächster Termin","naechsterTermin",d.naechsterTermin,"datetime-local")}
+    <div class="fld"><label for="f-form">Form der Zusammenarbeit</label><select id="f-form" data-f="form"${S.canWrite?"":" disabled"}><option value="prozess"${laufend(d)?"":" selected"}>Coaching mit Ziel und Abschluss</option><option value="laufend"${laufend(d)?" selected":""}>Laufende Begleitung ohne Enddatum</option></select></div>
     <div class="fld"><label for="f-anrede">Anrede in Nachrichten</label><select id="f-anrede" data-f="anredeForm"${S.canWrite?"":" disabled"}><option value="sie"${d.anredeForm!=="du"?" selected":""}>Sie</option><option value="du"${d.anredeForm==="du"?" selected":""}>Du</option></select></div>
   </div></div>
   <div class="sec"><h3>Anliegen & Auftrag</h3>
     ${fld("f-anliegen","Anliegen, in eigenen Worten","anliegen",d.anliegen,"area","Was wurde wörtlich gesagt?")}
     ${fld("f-ziel","Zielbild","ziel",d.ziel,"area","Woran merken die Person und ihr Umfeld, dass es gelungen ist?")}
     <div class="grid2">
-      ${fld("f-plan","Gebuchte Termine (Kontingent)","sitzungenPlan",d.sitzungenPlan,"number","z. B. 6")}
+      ${laufend(d)?"":fld("f-plan","Gebuchte Termine (Kontingent)","sitzungenPlan",d.sitzungenPlan,"number","z. B. 6")}
       ${fld("f-rhythmus","Rhythmus und Format","rhythmus",d.rhythmus,"text","z. B. alle 3 Wochen, 90 Min., Präsenz")}
     </div>
   </div>
@@ -744,8 +751,32 @@ function srsInputs(px){
 }
 const readFk=px=>[...document.querySelectorAll(`input[name="${px}fk"]:checked`)].map(i=>i.value);
 function readSrs(px){const o={};let any=false;SRS.forEach(([k])=>{const el=$("#"+px+"srs-"+k),v=el?el.value:"";o[k]=v===""?"":Math.max(0,Math.min(10,Math.round(+v)));if(v!=="")any=true});return any?o:null}
+function themenBlock(d){
+  const th=d.themen||[],offen=th.filter(x=>!x.erledigt),done=th.filter(x=>x.erledigt).slice(-5).reverse(),dis=S.canWrite?"":" disabled";
+  return `<div class="sec"><h3>Themenspeicher · ${offen.length}</h3>
+    <p class="hint">Was zwischen den Terminen auftaucht und beim nächsten Mal Platz haben soll. Abhaken, sobald es besprochen ist.</p>
+    <div class="checks">${offen.map(x=>`<label class="chk"><input type="checkbox" id="th-${esc(x.id)}" data-thema="${esc(x.id)}"${dis}><span>${esc(x.text)} <span class="hint">· ${esc(fmtShort(x.datum))}</span></span></label>`).join("")}</div>
+    ${S.canWrite?`<div class="row-inline"><div class="fld" style="flex:1;min-width:200px"><label for="th-neu">Neues Thema</label><input id="th-neu" placeholder="z. B. Gespräch mit der neuen Stellvertretung"></div><button class="btn small" data-act="thema-add" type="button">Merken</button></div>`:""}
+    ${done.length?`<details class="nach"><summary>Zuletzt besprochen</summary><div class="checks">${done.map(x=>`<label class="chk done"><input type="checkbox" id="th-${esc(x.id)}" data-thema="${esc(x.id)}" checked${dis}><span>${esc(x.text)}</span></label>`).join("")}</div></details>`:""}
+  </div>`;
+}
+function standortBlock(d){
+  const st=(d.standorte||[]).slice().sort((a,b)=>(b.datum||"").localeCompare(a.datum||""));
+  return `<div class="sec"><h3>Standortbestimmung · ${st.length}</h3>
+    <p class="hint">Eine laufende Begleitung hat keinen Abschluss. Dafür lohnt etwa alle drei Monate ein gemeinsamer Blick: Wo stehen wir, und wofür nutzen wir die nächsten Monate?</p>
+    <ul class="qs"><li>Was ist heute anders als vor drei Monaten, und woran merkt es das Team?</li><li>Welches Thema kommt immer wieder, und was sagt uns das?</li><li>Ist unsere Stunde noch das richtige Format, oder ist sie zur Gewohnheit geworden?</li></ul>
+    ${S.canWrite?`<div class="addbox">
+      <div class="fld"><label for="so-datum">Datum</label><input id="so-datum" type="date" value="${todayISO()}"></div>
+      <div class="fld"><label for="so-bewegt">Was hat sich bewegt?</label><textarea id="so-bewegt" placeholder="In den Worten von ${esc(vn(d))}"></textarea></div>
+      <div class="fld"><label for="so-fokus">Fokus für die nächsten Monate</label><textarea id="so-fokus" placeholder="Woran arbeiten wir, und woran merken wir Fortschritt?"></textarea></div>
+      <div><button class="btn" data-act="standort-add" type="button">Standort festhalten</button></div></div>`:""}
+    <div class="sess">${st.map(x=>`<div class="s-item"><span class="s-no" style="font-size:18px">${esc(x.datum?new Date(x.datum).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"}):"–")}</span><span class="s-date">${esc(x.datum?new Date(x.datum).getFullYear():"")}</span>
+      <div class="s-main">${x.bewegt?`<p><span class="lbl">Bewegt:</span> ${esc(x.bewegt)}</p>`:""}${x.fokus?`<p><span class="lbl">Fokus:</span> ${esc(x.fokus)}</p>`:""}
+      <div class="s-foot">${S.canWrite?(S.confirmSess==="so:"+x.id?`<span class="confirm">Löschen? <button class="btn small red" data-sodel-yes="${esc(x.id)}" type="button">Ja</button><button class="btn small ghost" data-sdel-no type="button">Nein</button></span>`:`<button class="linkish" data-sodel="${esc(x.id)}" type="button">Löschen</button>`):""}</div></div></div>`).join("")||`<p class="hint">Noch keine Standortbestimmung.</p>`}</div>
+  </div>`;
+}
 function tabVorbereitung(d){
-  const hs=held(d),l=hs[hs.length-1],plan=+d.sitzungenPlan||0,r=d.reiss||{};
+  const hs=held(d),l=hs[hs.length-1],plan=planOf(d),r=d.reiss||{};
   const fb=[...hs].reverse().find(hasSrs),nach=[...hs].reverse().find(s=>s.nachhoeren),tz=(d.teilziele||[]).filter(t=>t.titel);
   const hi=MOTIVE.filter(([m])=>r[m]==="hoch").map(([m])=>m),lo=MOTIVE.filter(([m])=>r[m]==="niedrig").map(([m])=>m);
   const withFk=hs.filter(s=>(s.faktoren||[]).length);
@@ -754,6 +785,7 @@ function tabVorbereitung(d){
   const li=(lb,v)=>v?`<li><span class="lbl">${lb}:</span> ${esc(v)}</li>`:"";
   return `<p class="hint">Sitzung ${hs.length+1}${plan?" von "+plan:""}${d.naechsterTermin?" · "+esc(fmtDT(d.naechsterTermin)):""}. Alles Wichtige auf einen Blick, für die zwei Minuten vor dem Termin.</p>
   ${transferBox(d)}
+  ${themenBlock(d)}
   <div class="sec"><h3>Wohin</h3>
     ${d.ziel?`<p class="lead">${esc(d.ziel)}</p>`:`<p class="hint">Noch kein Zielbild eingetragen.</p>`}
     ${tz.length?`<ul class="plist">${tz.map(t=>{const v=t.verlauf&&t.verlauf.length?t.verlauf[t.verlauf.length-1].wert:null;return `<li><span class="lbl">${v==null?"–":gasLbl(v)}</span> ${esc(t.titel)}${(t.stufen||{})[0]?` <span class="hint">· Ziel: ${esc(t.stufen[0])}</span>`:""}</li>`}).join("")}</ul>`:""}
@@ -767,6 +799,7 @@ function tabVorbereitung(d){
     ${rare?li("Bisher selten",rare):""}
     ${kar.map(k=>li(k.wer||"Jemand",[k.erwartung,k.weiss?"weiß: "+k.weiss:""].filter(Boolean).join(" · "))).join("")}
     ${li("Stärken",d.staerken)}
+    ${laufend(d)&&(d.standorte||[]).length?li("Aktueller Fokus",(d.standorte.slice().sort((a,b)=>(a.datum||"").localeCompare(b.datum||"")).pop()||{}).fokus):""}
   </ul>${!d.hypothesen&&!hi.length&&!lo.length&&!rare&&!kar.length&&!d.staerken?`<p class="hint">Hypothesen, Motive, Wirkfaktoren und Erwartungen erscheinen hier, sobald sie eingetragen sind.</p>`:""}</div>
   <div class="sec"><h3>Meine Frage für heute</h3>
     ${fld("f-frage","Mit welcher Frage gehe ich hinein?","frageHeute",d.frageHeute,"area","Nicht die Methode, sondern die Neugier.")}
@@ -798,7 +831,7 @@ function vereinbarungEntwurf(d){
   L.push("1. Anliegen",(d.anliegen||"[Anliegen in eigenen Worten]").trim(),"");
   L.push("2. Ziel",(d.ziel||"[Zielbild]").trim());
   if(tz.length){L.push("","Woran wir erkennen, dass es gelungen ist:");tz.forEach(t=>L.push("– "+t.titel+((t.stufen||{})[0]?": "+t.stufen[0]:"")))}
-  L.push("","3. Umfang und Rahmen",(d.sitzungenPlan?d.sitzungenPlan:"[Anzahl]")+" Termine"+(d.rhythmus?", "+d.rhythmus:"")+".");
+  L.push("","3. Umfang und Rahmen",laufend(d)?"Laufende Begleitung ohne festes Enddatum"+(d.rhythmus?", "+d.rhythmus:"")+". Beide Seiten können sie jederzeit beenden.":(d.sitzungenPlan?d.sitzungenPlan:"[Anzahl]")+" Termine"+(d.rhythmus?", "+d.rhythmus:"")+".");
   if(a.modell==="einzeln"&&a.satz)L.push("Honorar: "+eur(a.satz)+" pro Termin"+uz+".");
   else if(a.modell==="paket"&&(d.pakete||[]).length){const k=d.pakete[d.pakete.length-1];L.push("Honorar: "+(k.preis!==""?eur(k.preis):"[Preis]")+" für "+k.termine+" Termine"+uz+".")}
   else L.push("Honorar: [Honorar].");
@@ -848,7 +881,7 @@ function karussellBlock(d){
   </div>`;
 }
 function tabSitzungen(d){
-  const ss=sessions(d),plan=+d.sitzungenPlan||0,dis=S.canWrite?"":" disabled";
+  const ss=sessions(d),plan=planOf(d),dis=S.canWrite?"":" disabled";
   let k=0;const num=new Map();ss.forEach(s=>{if(s.art!=="Ausfall")num.set(s.id,++k)});
   const items=ss.slice().reverse().map(s=>{const aus=s.art==="Ausfall";return `<div class="s-item">
     <span class="s-no">${aus?"–":"S"+num.get(s.id)}</span><span class="s-date">${esc(fmtShort(s.datum))}</span>
@@ -895,6 +928,7 @@ function chartSVG(d){
   const pts=[];
   if(d.startwert!==""&&d.startwert!=null)pts.push({l:"Start",v:+d.startwert});
   held(d).forEach((s,i)=>{if(s.skala!==""&&s.skala!=null)pts.push({l:"S"+(i+1),v:+s.skala})});
+  if(pts.length>14)pts.splice(0,pts.length-12);
   if(pts.length<1)return `<p class="hint">Sobald ein Startwert oder die erste Sitzung mit Skalenwert eingetragen ist, erscheint hier der Verlauf.</p>`;
   const W=560,H=220,L=34,R=24,T=16,B=30,goal=d.zielwert!==""&&d.zielwert!=null?+d.zielwert:null;
   const n=pts.length,xs=i=>n===1?L+(W-L-R)/2:L+i*(W-L-R)/(n-1),ys=v=>T+(10-v)*(H-T-B)/10;
@@ -910,7 +944,7 @@ function tabEntwicklung(d){
   const vals=[];if(d.startwert!==""&&d.startwert!=null)vals.push(+d.startwert);
   sessions(d).forEach(s=>{if(s.skala!==""&&s.skala!=null)vals.push(+s.skala)});
   const st=vals[0],cur=vals[vals.length-1],delta=vals.length>1?cur-st:null;
-  return `${gasBlock(d)}<div class="sec"><h3>Entwicklung auf der Skala</h3>
+  return `${laufend(d)?standortBlock(d):""}${gasBlock(d)}<div class="sec"><h3>Entwicklung auf der Skala</h3>
     <p class="hint">„Auf einer Skala von 0 bis 10: Wo stehen Sie heute mit Ihrem Anliegen?“ Startwert aus dem Kontrakt, dann ein Wert pro Sitzung.</p>
     <div class="kpis">
       <div class="stat"><span class="n">${st!=null?st:"–"}</span><span class="l">Start</span></div>
@@ -927,13 +961,13 @@ function tabEntwicklung(d){
   <div class="sec"><h3>Bilanz</h3>
     ${fld("f-bilanz","Bilanz in eigenen Worten","bilanz",d.bilanz,"area","Was hat sich verändert? Was wird mitgenommen? (Abschlussgespräch)")}
   </div>
-  <div class="sec"><h3>Abschlussbrief</h3>
+  ${laufend(d)&&phaseOf(d)<5?"":`  <div class="sec"><h3>Abschlussbrief</h3>
     <p class="hint">Ein Brief zum Mitnehmen. Er nutzt nur Zielbild, Teilziele, die Aha-Sätze, den Skalenweg, die Stärken und die Bilanz des Klienten. Hypothesen, Resonanz und Motive bleiben draußen. Lies ihn, bevor du ihn weitergibst.</p>
     ${S.canWrite?`<div class="row-inline"><div class="fld"><label for="b-anrede">Anrede</label><select id="b-anrede"><option value="du"${d.anredeForm==="du"?" selected":""}>Du</option><option value="sie"${d.anredeForm!=="du"?" selected":""}>Sie</option></select></div>
       ${S.confirmSess==="brief"?`<span class="confirm">Deine Änderungen am Brief werden überschrieben. <button class="btn small red" data-act="brief-yes" type="button">Neu erstellen</button><button class="btn small ghost" data-sdel-no type="button">Abbrechen</button></span>`
       :`<button class="btn small" data-act="brief" type="button">${d.abschlussbrief?"Entwurf neu erstellen":"Entwurf aus der Akte erstellen"}</button>${d.abschlussbrief?`<button class="btn small ghost" data-act="brief-copy" type="button">Text kopieren</button>`:""}`}</div>`:""}
     ${d.abschlussbrief?`<div class="fld"><label for="f-brief">Brief (frei bearbeitbar)</label><textarea id="f-brief" class="brief" data-f="abschlussbrief"${S.canWrite?"":" disabled"}>${esc(d.abschlussbrief)}</textarea></div>`:""}
-  </div>`;
+  </div>`}`;
 }
 function tabMotive(d){
   const r=d.reiss||{},dis=S.canWrite?"":" disabled";
@@ -1229,6 +1263,8 @@ function akteText(d){
   add("Deutung der Motive",d.reissNotiz);
   const tz=(d.teilziele||[]).filter(t=>t.titel);if(tz.length){L.push("","Teilziele:");tz.forEach(t=>{const v=t.verlauf||[];L.push("- "+t.titel+((t.stufen||{})[0]?" (Ziel: "+t.stufen[0]+")":"")+(v.length?" · Verlauf: "+v.map(x=>fmtShort(x.datum)+" "+gasLbl(x.wert)).join(", "):""))})}
   const kr=(d.karussell||[]).filter(k=>k.wer||k.erwartung);if(kr.length){L.push("","Auftragskarussell:");kr.forEach(k=>L.push("- "+(k.wer||"?")+": "+[k.erwartung,k.weiss?"weiß: "+k.weiss:"",k.haltung?"meine Haltung: "+k.haltung:""].filter(Boolean).join(" · ")))}
+  const so=d.standorte||[];if(so.length){L.push("","Standortbestimmungen:");so.forEach(x=>L.push("- "+fmtShort(x.datum)+": "+[x.bewegt,x.fokus?"Fokus: "+x.fokus:""].filter(Boolean).join(" · ")))}
+  const th=(d.themen||[]).filter(x=>!x.erledigt);if(th.length){L.push("","Themenspeicher:");th.forEach(x=>L.push("- "+x.text))}
   L.push("","Notizen des Coachs:");add("Hypothesen",d.hypothesen);add("Innere Bühne",d.innenleben);add("Resonanz",d.resonanz);add("Notizen",d.notizen);
   add("Bilanz",d.bilanz);
   if((d.rechnungen||[]).length){L.push("","Rechnungen:");d.rechnungen.forEach(r=>L.push("- "+(r.nummer||"ohne Nummer")+" vom "+fmtShort(r.datum)+", "+eur(brutto(r))+(r.bezahlt?", bezahlt":"")))}
@@ -1243,7 +1279,9 @@ function addSession(id,s){patch(id,d=>{d.sitzungen=(d.sitzungen||[]).concat(s);i
 /* ---------- Ereignisse ---------- */
 function setPhase(id,n){patch(id,d=>{d.phase=n;d.phaseSeit=d.phaseSeit||{};if(!d.phaseSeit[n])d.phaseSeit[n]=todayISO();if(n===6&&!d.ausgang)d.ausgang="ziel"},{drawer:true,now:true})}
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-quick],[data-ordnen],[data-addst],[data-open],[data-act],[data-phase],[data-tab],[data-motiv],[data-sdel],[data-sdel-yes],[data-sdel-no],[data-agdel],[data-agdel-yes],[data-modell],[data-pdel],[data-pdel-yes],[data-rdel],[data-rdel-yes],[data-paid],[data-jdel],[data-jdel-yes],[data-prep],[data-rb],[data-tstat],[data-gasset],[data-gasdel],[data-gasdel-yes],[data-kardel],[data-kardel-yes]");if(!t)return;
+  const t=e.target.closest("[data-quick],[data-ordnen],[data-addst],[data-open],[data-act],[data-phase],[data-tab],[data-motiv],[data-sdel],[data-sdel-yes],[data-sdel-no],[data-agdel],[data-agdel-yes],[data-modell],[data-pdel],[data-pdel-yes],[data-rdel],[data-rdel-yes],[data-paid],[data-jdel],[data-jdel-yes],[data-prep],[data-rb],[data-tstat],[data-gasset],[data-gasdel],[data-gasdel-yes],[data-kardel],[data-kardel-yes],[data-sodel],[data-sodel-yes]");if(!t)return;
+  if(t.dataset.sodel){S.confirmSess="so:"+t.dataset.sodel;renderDrawer();return}
+  if(t.dataset.sodelYes){const sid=t.dataset.sodelYes;S.confirmSess=null;patch(S.open,d=>{d.standorte=(d.standorte||[]).filter(x=>x.id!==sid)},{drawer:true,now:true});return}
   if(t.dataset.quick){openQuick(t.dataset.quick);return}
   if(t.dataset.prep){openDrawer(t.dataset.prep);S.tab="vorbereitung";renderDrawer();return}
   if(t.dataset.rb&&S.open){const d=S.docs.get(S.open),s=d&&(d.sitzungen||[]).find(x=>x.id===t.dataset.rb);if(s)copyText(rueckblickText(d,s),"Rückblick");return}
@@ -1302,6 +1340,8 @@ document.addEventListener("click",e=>{
     patch(S.open,x=>{x.abschlussbrief=briefEntwurf(x,du)},{drawer:true,now:true});
   }
   else if(a==="gas-add"&&S.open){const ti=$("#gas-neu").value.trim();if(!ti){$("#gas-neu").focus();return}patch(S.open,d=>{d.teilziele=(d.teilziele||[]).concat({id:uid(),titel:ti,stufen:{},verlauf:[]})},{drawer:true,now:true})}
+  else if(a==="thema-add"&&S.open){const tx=$("#th-neu").value.trim();if(!tx){$("#th-neu").focus();return}patch(S.open,d=>{d.themen=(d.themen||[]).concat({id:uid(),text:tx,datum:todayISO(),erledigt:""})},{drawer:true,now:true});setTimeout(()=>{const n=$("#th-neu");n&&n.focus()},0)}
+  else if(a==="standort-add"&&S.open){const bw=$("#so-bewegt").value.trim(),fo=$("#so-fokus").value.trim();if(!bw&&!fo){$("#so-bewegt").focus();return}const x={id:uid(),datum:$("#so-datum").value||todayISO(),bewegt:bw,fokus:fo};patch(S.open,d=>{d.standorte=(d.standorte||[]).concat(x)},{drawer:true,now:true})}
   else if(a==="kar-add"&&S.open){patch(S.open,d=>{d.karussell=(d.karussell||[]).concat({id:uid(),wer:"",erwartung:"",weiss:"",haltung:""})},{drawer:true,now:true})}
   else if((a==="verein"||a==="verein-yes")&&S.open){const d=S.docs.get(S.open);if(!d)return;if(a==="verein"&&d.vereinbarung){S.confirmSess="verein";renderDrawer();return}S.confirmSess=null;patch(S.open,x=>{x.vereinbarung=vereinbarungEntwurf(x)},{drawer:true,now:true})}
   else if(a==="verein-copy"&&S.open){const d=S.docs.get(S.open);if(d)copyText(d.vereinbarung||"","Vereinbarung")}
@@ -1314,7 +1354,7 @@ document.addEventListener("click",e=>{
     patch(S.open,d=>{
       ["rolle","organisation","quelle","anliegen","ziel","auftraggeber","agKontakt","agErwartung","vertraulichkeit","rhythmus","staerken","bilanz","hypothesen","innenleben","resonanz","notizen","reissNotiz","abschlussbrief","ausgangNotiz","rechnungAn","naechsterTermin","vereinbarung","frageHeute","absageRegel"].forEach(k=>{if(k in d)d[k]=""});
       d.name="Anonym "+d.id.slice(0,4).toUpperCase();d.reiss={};
-      (d.sitzungen||[]).forEach(s=>{s.thema="";s.aha="";s.transfer="";s.beitrag="";s.nachhoeren="";s.transferNotiz=""});(d.teilziele||[]).forEach(g=>{g.titel="Teilziel";g.stufen={}});(d.karussell||[]).forEach(k=>{k.erwartung="";k.weiss="";k.haltung=""});
+      (d.sitzungen||[]).forEach(s=>{s.thema="";s.aha="";s.transfer="";s.beitrag="";s.nachhoeren="";s.transferNotiz=""});(d.teilziele||[]).forEach(g=>{g.titel="Teilziel";g.stufen={}});(d.karussell||[]).forEach(k=>{k.erwartung="";k.weiss="";k.haltung=""});d.themen=[];(d.standorte||[]).forEach(x=>{x.bewegt="";x.fokus=""});
       (d.agTermine||[]).forEach(x=>{x.ergebnis=""});
       d.anonymisiert=todayISO();d.checks=Object.assign({},d.checks,{loeschen:true});
     },{drawer:true,now:true});
@@ -1382,10 +1422,11 @@ document.addEventListener("input",e=>{
 document.addEventListener("change",e=>{
   const t=e.target;
   if(t.dataset.trans){readTranscript(t);return}
+  if(t.dataset.thema&&S.open){const tid=t.dataset.thema,v=t.checked;patch(S.open,d=>{const x=(d.themen||[]).find(y=>y.id===tid);if(x)x.erledigt=v?todayISO():""},{drawer:true,now:true});return}
   if(t.dataset.sgel&&S.open){const sid=t.dataset.sgel,v=t.checked;t.closest("label").classList.toggle("done",v);patch(S.open,d=>{const s=(d.sitzungen||[]).find(x=>x.id===sid);if(s)s.aufnahmeGeloescht=v});return}
   if(t.dataset.chk&&S.open){const k=t.dataset.chk;patch(S.open,d=>{d.checks=d.checks||{};d.checks[k]=t.checked},{drawer:true});return}
   if((t.dataset.af||t.dataset.ppreis)&&S.open){renderDrawer();return}
-  if(t.dataset.f&&S.open){flush(S.open);if(t.dataset.f==="ausgang"){renderDrawer();return}const h=document.getElementById("d-h"),d=S.docs.get(S.open);if(h&&d&&t.dataset.f==="name")h.textContent=d.name||"Ohne Namen"}
+  if(t.dataset.f&&S.open){flush(S.open);if(t.dataset.f==="ausgang"||t.dataset.f==="form"){renderDrawer();return}const h=document.getElementById("d-h"),d=S.docs.get(S.open);if(h&&d&&t.dataset.f==="name")h.textContent=d.name||"Ohne Namen"}
 });
 document.addEventListener("keydown",e=>{
   if(e.key==="Escape"&&(S.open||S.panel)&&!document.querySelector("dialog[open]"))closeDrawer();
@@ -1395,7 +1436,7 @@ document.addEventListener("keydown",e=>{
 /* Schnellnotiz direkt von der Karte */
 function openQuick(id){
   const d=S.docs.get(id);if(!d||!S.canWrite)return;
-  S.quickId=id;$("#form-quick").reset();$("#q-talk").innerHTML=talkBox("q-");$("#q-tloop").innerHTML=transferBox(d);$("#q-extra").innerHTML=fkChips("q-")+srsInputs("q-");$("#q-who").textContent=(d.name||"Ohne Namen")+" · Sitzung "+(held(d).length+1)+((+d.sitzungenPlan)?" von "+d.sitzungenPlan:"");
+  S.quickId=id;$("#form-quick").reset();$("#q-talk").innerHTML=talkBox("q-");$("#q-tloop").innerHTML=transferBox(d);$("#q-extra").innerHTML=fkChips("q-")+srsInputs("q-");$("#q-who").textContent=(d.name||"Ohne Namen")+" · Sitzung "+(held(d).length+1)+(planOf(d)?" von "+planOf(d):"");
   $("#q-datum").value=todayISO();$("#q-art").value=(d.wiederaufnahmen||[]).length?"Follow-up":"Sitzung";
   const dl=$("#dlg-quick");try{dl.showModal()}catch(_){dl.setAttribute("open","")}setTimeout(()=>$("#q-thema").focus(),0);
 }
@@ -1429,7 +1470,7 @@ $("#form-new").addEventListener("submit",e=>{
   e.preventDefault();
   const name=$("#n-name").value.trim();if(!name){$("#n-name").focus();return}
   const id=col.doc().id,t=todayISO();
-  S.docs.set(id,{id,name,rolle:$("#n-rolle").value.trim(),organisation:$("#n-org").value.trim(),quelle:$("#n-quelle").value,anliegen:$("#n-anliegen").value.trim(),
+  S.docs.set(id,{id,name,rolle:$("#n-rolle").value.trim(),organisation:$("#n-org").value.trim(),quelle:$("#n-quelle").value,form:$("#n-form").value,anliegen:$("#n-anliegen").value.trim(),
     phase:1,phaseSeit:{1:t},kontaktDatum:t,checks:{anfrage:true},sitzungen:[],reiss:{},erstellt:new Date().toISOString(),aktualisiert:new Date().toISOString()});
   dirty.add(id);schedule(id,0);$("#dlg-new").close();renderAll();openDrawer(id);
 });
