@@ -77,6 +77,11 @@ h1,h2,h3{font-family:var(--display);font-weight:500;line-height:1.15;text-wrap:b
 .bars .track i{display:block;height:100%;background:var(--red)}
 .bars .n{color:var(--mute);font-variant-numeric:tabular-nums}
 textarea.code{font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;min-height:90px;word-break:break-all}
+.plain{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:16px}
+.aha{gap:6px}
+.aha .satz{font:500 20px/1.35 var(--display)}
+details.card summary{cursor:pointer}
+details.card[open] summary{margin-bottom:4px}
 .nav{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--card);border-top:1px solid var(--rule);
   padding:8px max(8px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
 .nav-in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
@@ -132,9 +137,12 @@ var DIM={
  w:["Wechsel","Du suchst Bewegung. Du bringst Ideen und Schwung und kannst andere mitreißen. Unter Druck kann es dir schwerfallen, bei einer Sache zu bleiben."]
 };
 
-var S={view:"weg",name:"",ziel:"",fokus:"",verein:"",vstatus:"",vnotiz:"",frage:"",themen:"",rt:{},rta:"",rtb:"",rtc:""};
+var S={view:"weg",name:"",ziel:"",fokus:"",verein:"",vstatus:"",vnotiz:"",frage:"",themen:"",rt:{},rta:"",rtb:"",rtc:"",gestartet:false,teilziele:[],sammlung:[],naechster:"",eigen:""};
 try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);if(p&&typeof p==="object")Object.keys(S).forEach(function(k){if(k in p)S[k]=p[k]})}}catch(e){}
-if(!S.rt||typeof S.rt!=="object")S.rt={};
+function heal(){if(!S.rt||typeof S.rt!=="object")S.rt={};if(!Array.isArray(S.teilziele))S.teilziele=[];if(!Array.isArray(S.sammlung))S.sammlung=[]}
+heal();
+function fmtD(iso){var d=new Date(iso);return isNaN(d)?"":d.toLocaleDateString("de-DE",{day:"numeric",month:"long",year:"numeric"})}
+function fmtT(iso){var d=new Date(iso);if(isNaN(d))return"";return d.toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"})+(String(iso).length>10?", "+d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" Uhr":"")}
 var timer=null;
 function save(){clearTimeout(timer);timer=setTimeout(function(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}},250)}
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
@@ -149,20 +157,35 @@ function rtCount(){return RT.filter(function(_,i){return S.rt[i]!==undefined}).l
 function rtSum(){var s={n:0,d:0,a:0,w:0};RT.forEach(function(q,i){if(S.rt[i]!==undefined)s[q[0]]+=+S.rt[i]});return s}
 
 /* ---------- Ansichten ---------- */
+function codeCard(){
+  var inner='<p class="hint">Wenn du von mir einen Code bekommen hast, füge ihn hier ein. Dein fokusBuch stellt sich dann auf dich ein. Deine eigenen Einträge bleiben erhalten.</p>'+
+   '<div class="fld"><label for="in-start">Code einfügen</label><textarea id="in-start" class="code" placeholder="FB1S. oder FB1U."></textarea></div>'+
+   '<div class="row"><button class="btn two" type="button" data-act="import">Einlesen</button><span class="msg" id="msg-import" aria-live="polite"></span></div>';
+  return S.gestartet?'<details class="card"><summary><b>Neuen Code von Sascha einlesen</b></summary>'+inner+'</details>':'<div class="card"><h3>Code von Sascha</h3>'+inner+'</div>';
+}
 function vWeg(){
   var hallo=S.name?"Hallo "+esc(S.name.split(/\s+/)[0])+".":"Schön, dass du da bist.";
+  var tz=S.teilziele.length?'<div class="fld"><label>Woran wir merken, dass es gelingt</label><ul class="plain">'+S.teilziele.map(function(t){return '<li>'+esc(t)+'</li>'}).join("")+'</ul></div>':"";
+  var term=S.naechster&&new Date(S.naechster)>=new Date(new Date().toDateString())?'<p class="hint">Unser nächster Termin: '+esc(fmtT(S.naechster))+'</p>':"";
+  var samm=S.sammlung.slice().sort(function(a,b){return String(b.datum).localeCompare(String(a.datum))});
   return '<section class="sec"><p class="lead">'+hallo+' Hier hältst du fest, was dir zwischen unseren Terminen wichtig ist. Das fokusBuch gehört dir.</p>'+
-   '<p class="note">Alles, was du hier einträgst, bleibt auf diesem Gerät in deinem Browser. Ich sehe nur, was du mir selbst schickst, und ich gebe nichts davon weiter. Was du mit deinen Einträgen machst, entscheidest du. Nutze am besten dein eigenes Gerät, denn wer dieses Gerät benutzt, kann auch dein fokusBuch öffnen.</p></section>'+
+   '<p class="note">Alles, was du hier einträgst, bleibt auf diesem Gerät in deinem Browser. Ich sehe nur, was du mir selbst schickst, und ich gebe nichts davon weiter. Was du mit deinen Einträgen machst, entscheidest du. Nutze am besten dein eigenes Gerät, denn wer dieses Gerät benutzt, kann auch dein fokusBuch öffnen.</p>'+
+   (S.gestartet?"":codeCard())+'</section>'+
    '<section class="sec"><h2>Mein Weg</h2><div class="card">'+
      fld("f-name","Wie heißt du?","name",false,"Dein Vorname")+
-     fld("f-ziel","Wo will ich hin?","ziel",true,"Woran merkst du und woran merken andere, dass es gelungen ist?")+
+     fld("f-ziel","Wo will ich hin?","ziel",true,"Woran merkst du und woran merken andere, dass es gelungen ist?")+tz+
      fld("f-fokus","Mein Fokus gerade","fokus",true,"Das eine Thema, an dem du in den nächsten Wochen arbeitest")+
    '</div></section>'+
-   '<section class="sec"><h2>Meine Vereinbarung</h2><div class="card">'+
+   '<section class="sec"><h2>Meine Vereinbarung</h2>'+term+'<div class="card">'+
      fld("f-verein","Was habe ich mir bis zum nächsten Mal vorgenommen?","verein",true,"So konkret wie möglich: was, wann, mit wem")+
      '<div class="fld"><label>Wie läuft es damit?</label>'+chips("vstatus",VSTAT)+'</div>'+
      fld("f-vnotiz","Was hat geholfen, was hat gehindert?","vnotiz",true,"")+
-   '</div></section>';
+   '</div></section>'+
+   '<section class="sec"><h2>Meine Sammlung</h2><p class="lead">Sätze und Gedanken, die bleiben sollen.</p>'+
+     '<div class="card">'+fld("f-eigen","Ein eigener Gedanke","eigen",true,"Was ist dir aufgefallen, was willst du nicht vergessen?")+
+     '<div class="row"><button class="btn two" type="button" data-act="aha-add">Festhalten</button></div></div>'+
+     (samm.length?samm.map(function(a){return '<div class="card aha"><p class="hint">'+esc(fmtD(a.datum))+(a.von==="ich"?"":" · aus unserer Sitzung")+'</p><p class="satz">'+esc(a.text)+'</p></div>'}).join(""):'<p class="note">Hier sammeln sich deine Aha-Sätze aus unseren Sitzungen und deine eigenen Gedanken.</p>')+
+   '</section>'+(S.gestartet?'<section class="sec">'+codeCard()+'</section>':"");
 }
 function vUeben(){
   var c=rtCount(),tag=c===RT.length?'<span class="tag done">Fertig</span>':c?'<span class="tag run">'+c+' von '+RT.length+'</span>':'<span class="tag">Etwa 5 Minuten</span>';
@@ -251,10 +274,27 @@ function textRT(){
 function makeCode(){
   var bytes=new TextEncoder().encode(JSON.stringify(S)),bin="";bytes.forEach(function(b){bin+=String.fromCharCode(b)});return "FB1."+btoa(bin);
 }
-function readCode(s){
-  s=String(s||"").replace(/\s+/g,"");if(s.indexOf("FB1.")!==0)throw new Error("x");
-  var bin=atob(s.slice(4)),bytes=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+function unpack(b64){
+  var bin=atob(b64),bytes=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
   var p=JSON.parse(new TextDecoder().decode(bytes));if(!p||typeof p!=="object")throw new Error("x");return p;
+}
+function str(v,n){return typeof v==="string"?v.slice(0,n||4000):""}
+/* Liest Sicherung (FB1.), Startcode (FB1S.) oder Sitzungscode (FB1U.). Gibt eine Meldung zurück. */
+function importAny(raw){
+  var s=String(raw||"").replace(/\s+/g,"");
+  if(s.indexOf("FB1S.")===0){var p=unpack(s.slice(5));
+    if(str(p.name))S.name=str(p.name,80);if(str(p.ziel))S.ziel=str(p.ziel);if(str(p.fokus))S.fokus=str(p.fokus);
+    if(Array.isArray(p.teilziele))S.teilziele=p.teilziele.map(function(t){return str(t,300)}).filter(Boolean).slice(0,12);
+    if(str(p.verein)&&str(p.verein)!==S.verein){S.verein=str(p.verein);S.vstatus="";S.vnotiz=""}
+    if(str(p.naechster))S.naechster=str(p.naechster,40);
+    S.gestartet=true;return "Dein fokusBuch ist eingerichtet.";}
+  if(s.indexOf("FB1U.")===0){var u=unpack(s.slice(5)),d=str(u.datum,20)||new Date().toISOString().slice(0,10);
+    if(str(u.aha)&&!S.sammlung.some(function(a){return a.datum===d&&a.text===str(u.aha)}))S.sammlung.push({datum:d,text:str(u.aha),von:"sitzung"});
+    if(str(u.verein)&&str(u.verein)!==S.verein){S.verein=str(u.verein);S.vstatus="";S.vnotiz=""}
+    if(str(u.naechster))S.naechster=str(u.naechster,40);
+    S.frage="";S.themen="";S.gestartet=true;return "Eingelesen. Deine Sammlung und deine Vereinbarung sind auf dem neuen Stand.";}
+  if(s.indexOf("FB1.")===0){var b=unpack(s.slice(4));Object.keys(S).forEach(function(k){if(k in b)S[k]=b[k]});heal();return "Deine Sicherung ist eingelesen.";}
+  throw new Error("x");
 }
 function copy(text,msgId,outId,okText){
   var msg=$("#"+msgId),out=outId&&$("#"+outId);if(out)out.value=text;
@@ -286,9 +326,15 @@ document.addEventListener("click",function(e){
   if(t.dataset.copy==="code"){copy(makeCode(),"msg-code","out-code","Kopiert. Bewahre den Code gut auf.");return}
   if(t.dataset.act==="rt-reset"){S.rt={};save();render();return}
   if(t.dataset.act==="restore"){var m=$("#msg-restore");
-    try{var p=readCode($("#in-code").value);Object.keys(S).forEach(function(k){if(k in p)S[k]=p[k]});if(!S.rt||typeof S.rt!=="object")S.rt={};S.view="weg";save();render();window.scrollTo(0,0)}
+    try{importAny($("#in-code").value);S.view="weg";save();render();window.scrollTo(0,0)}
     catch(er){m.className="msg err";m.textContent="Der Code lässt sich nicht lesen. Bitte noch einmal vollständig einfügen. Er beginnt mit FB1."}
     return}
+  if(t.dataset.act==="import"){var mi=$("#msg-import");
+    try{var txt=importAny($("#in-start").value);S.view="weg";save();render();window.scrollTo(0,0);var m2=$("#msg-import");if(m2){m2.className="msg";m2.textContent=txt}}
+    catch(er){mi.className="msg err";mi.textContent="Der Code lässt sich nicht lesen. Bitte noch einmal vollständig einfügen."}
+    return}
+  if(t.dataset.act==="aha-add"){var tx=String(S.eigen||"").trim();if(!tx){var f=$("#f-eigen");f&&f.focus();return}
+    S.sammlung.push({datum:new Date().toISOString().slice(0,10),text:tx,von:"ich"});S.eigen="";save();render();return}
 });
 document.addEventListener("input",function(e){
   var t=e.target;if(!t.dataset||!t.dataset.k)return;S[t.dataset.k]=t.value;save();
