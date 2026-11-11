@@ -66,7 +66,9 @@ h1,h2,h3{font-family:var(--display);font-weight:500;line-height:1.15;text-wrap:b
 .prog i{display:block;height:100%;background:var(--red);transition:width .3s}
 .cross{width:100%;max-width:340px;height:auto;display:block;margin:0 auto}
 .cross .ax{stroke:var(--line-2);stroke-width:1.5}
-.cross .box{fill:#fff;stroke:var(--rule)}
+.cross .ring{fill:none;stroke:var(--rule);stroke-width:1}
+.cross .ring:first-child{fill:#fff}
+.cross .net{fill:var(--red);fill-opacity:.12;stroke:var(--red);stroke-width:2;stroke-linejoin:round}
 .cross text{font:600 13px var(--body);fill:var(--ink-2)}
 .cross .pt{fill:var(--red)}
 .cross .halo{fill:var(--red);opacity:.14}
@@ -165,26 +167,31 @@ function vWeg(){
 function vUeben(){
   var c=rtCount(),tag=c===RT.length?'<span class="tag done">Fertig</span>':c?'<span class="tag run">'+c+' von '+RT.length+'</span>':'<span class="tag">Etwa 5 Minuten</span>';
   return '<section class="sec"><h2>Übungen</h2><p class="lead">Kleine Arbeiten für dich allein. Nimm dir, was gerade passt.</p>'+
-   '<button class="tile" type="button" data-go="rt"><span><b>Was mich antreibt</b><span>Nähe, Distanz, Dauer, Wechsel: eine Selbsteinschätzung nach Riemann und Thomann</span></span>'+tag+'</button>'+
+   '<button class="tile" type="button" data-go="rt"><span><b>Was mich antreibt</b><span>Dauer, Nähe, Wechsel, Distanz: eine Selbsteinschätzung nach Riemann und Thomann</span></span>'+tag+'</button>'+
    '<button class="tile" type="button" disabled><span><b>Mein Inneres Team</b><span>Welche Stimmen melden sich in mir, und wer führt?</span></span><span class="tag">Folgt</span></button>'+
    '<button class="tile" type="button" disabled><span><b>Werte- und Entwicklungsquadrat</b><span>Wo wird eine Stärke von mir zu viel des Guten?</span></span><span class="tag">Folgt</span></button>'+
    '<button class="tile" type="button" disabled><span><b>Mein Profil</b><span>Ergebnisse aus ID37, LINC oder Reiss festhalten</span></span><span class="tag">Folgt</span></button>'+
    '</section>';
 }
 function crossSVG(s){
-  var W=300,c=W/2,r=104,x=c+(s.w-s.a)/15*r,y=c+(s.n-s.d)/15*r;
-  return '<svg class="cross" viewBox="0 0 '+W+' '+W+'" role="img" aria-label="Dein Punkt im Kreuz aus Nähe, Distanz, Dauer und Wechsel">'+
-   '<rect class="box" x="'+(c-r)+'" y="'+(c-r)+'" width="'+2*r+'" height="'+2*r+'" rx="16"/>'+
+  /* Dauer oben, Wechsel unten, Distanz links, Nähe rechts */
+  var W=300,c=W/2,r=104,u=r/15,x=c+(s.n-s.d)*u/2,y=c+(s.w-s.a)*u/2; /* halbiert, damit der Punkt immer im Netz bleibt */
+  function ring(v){var q=v*u;return '<polygon class="ring" points="'+c+','+(c-q)+' '+(c+q)+','+c+' '+c+','+(c+q)+' '+(c-q)+','+c+'"/>'}
+  var net=c+','+(c-s.a*u).toFixed(1)+' '+(c+s.n*u).toFixed(1)+','+c+' '+c+','+(c+s.w*u).toFixed(1)+' '+(c-s.d*u).toFixed(1)+','+c;
+  return '<svg class="cross" viewBox="0 0 '+W+' '+W+'" role="img" aria-label="Dein Spinnennetz aus Dauer '+s.a+', Nähe '+s.n+', Wechsel '+s.w+' und Distanz '+s.d+' von jeweils 15">'+
+   ring(15)+ring(10)+ring(5)+
    '<line class="ax" x1="'+(c-r)+'" y1="'+c+'" x2="'+(c+r)+'" y2="'+c+'"/><line class="ax" x1="'+c+'" y1="'+(c-r)+'" x2="'+c+'" y2="'+(c+r)+'"/>'+
-   '<text x="'+c+'" y="26" text-anchor="middle">Distanz</text><text x="'+c+'" y="'+(W-14)+'" text-anchor="middle">Nähe</text>'+
-   '<text x="14" y="'+(c+4)+'" text-anchor="middle" transform="rotate(-90 14 '+c+')">Dauer</text><text x="'+(W-14)+'" y="'+(c+4)+'" text-anchor="middle" transform="rotate(90 '+(W-14)+' '+c+')">Wechsel</text>'+
-   '<circle class="halo" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="22"/><circle class="pt" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="8"/></svg>';
+   '<text x="'+c+'" y="26" text-anchor="middle">Dauer</text><text x="'+c+'" y="'+(W-14)+'" text-anchor="middle">Wechsel</text>'+
+   '<text x="14" y="'+(c+4)+'" text-anchor="middle" transform="rotate(-90 14 '+c+')">Distanz</text><text x="'+(W-14)+'" y="'+(c+4)+'" text-anchor="middle" transform="rotate(90 '+(W-14)+' '+c+')">Nähe</text>'+
+   '<polygon class="net" points="'+net+'"/>'+
+   '<circle class="halo" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="16"/><circle class="pt" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="7"/></svg>';
 }
 function rtResult(){
   var s=rtSum(),ord=["n","d","a","w"].sort(function(a,b){return s[b]-s[a]}),top=ord.filter(function(k){return s[k]>=s[ord[0]]-1}).slice(0,2);
   return '<div class="card" id="rt-result"><h3>Dein Bild</h3>'+crossSVG(s)+
-   '<div class="bars">'+["n","d","a","w"].map(function(k){return '<span>'+DIM[k][0]+'</span><span class="track"><i style="width:'+Math.round(s[k]/15*100)+'%"></i></span><span class="n">'+s[k]+' von 15</span>'}).join("")+'</div>'+
+   '<div class="bars">'+["a","n","w","d"].map(function(k){return '<span>'+DIM[k][0]+'</span><span class="track"><i style="width:'+Math.round(s[k]/15*100)+'%"></i></span><span class="n">'+s[k]+' von 15</span>'}).join("")+'</div>'+
    top.map(function(k){return '<p><b>'+DIM[k][0]+'.</b> '+DIM[k][1]+'</p>'}).join("")+
+   '<p class="hint">Das Netz zeigt, wie stark jede der vier Strebungen bei dir ausgeprägt ist. Der Punkt zeigt, wohin es dich insgesamt zieht.</p>'+
    '<p class="hint">Jeder Mensch trägt alle vier Strebungen in sich. Das Bild zeigt deine Selbsteinschätzung von heute und ist kein Testergebnis. Keine Strebung ist besser als eine andere.</p></div>'+
    '<div class="card"><h3>Was sagt mir das?</h3>'+
      fld("f-rta","Wo erkenne ich mich wieder, und wo nicht?","rta",true,"")+
