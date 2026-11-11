@@ -82,6 +82,16 @@ textarea.code{font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace
 .aha .satz{font:500 20px/1.35 var(--display)}
 details.card summary{cursor:pointer}
 details.card[open] summary{margin-bottom:4px}
+.stimme{display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid var(--rule);border-radius:14px;background:var(--paper)}
+.stage{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;justify-content:center;padding:18px 12px;border-radius:14px;background:var(--wash);min-height:90px}
+.voice{display:flex;flex-direction:column;gap:2px;background:#fff;border:1px solid var(--rule);border-radius:14px;padding:8px 12px;max-width:100%}
+.voice b{font:500 16px/1.2 var(--display)}
+.voice span{font-size:13px;color:var(--mute);line-height:1.35}
+.voice.l1{opacity:.75}
+.voice.l2 b{font-size:20px}
+.voice.l3{border-color:var(--red);padding:12px 16px}
+.voice.l3 b{font-size:26px;color:var(--red)}
+.voice.l3 span{font-size:15px;color:var(--ink-2)}
 .nav{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--card);border-top:1px solid var(--rule);
   padding:8px max(8px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
 .nav-in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
@@ -137,14 +147,18 @@ var DIM={
  w:["Wechsel","Du suchst Bewegung. Du bringst Ideen und Schwung und kannst andere mitreißen. Unter Druck kann es dir schwerfallen, bei einer Sache zu bleiben."]
 };
 
-var S={view:"weg",name:"",ziel:"",fokus:"",verein:"",vstatus:"",vnotiz:"",frage:"",themen:"",rt:{},rta:"",rtb:"",rtc:"",gestartet:false,teilziele:[],sammlung:[],naechster:"",eigen:""};
+var S={view:"weg",name:"",ziel:"",fokus:"",verein:"",vstatus:"",vnotiz:"",frage:"",themen:"",rt:{},rta:"",rtb:"",rtc:"",gestartet:false,teilziele:[],sammlung:[],naechster:"",eigen:"",it:{anlass:"",stimmen:[],fehlt:"",oberhaupt:"",schritt:""}};
 try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);if(p&&typeof p==="object")Object.keys(S).forEach(function(k){if(k in p)S[k]=p[k]})}}catch(e){}
-function heal(){if(!S.rt||typeof S.rt!=="object")S.rt={};if(!Array.isArray(S.teilziele))S.teilziele=[];if(!Array.isArray(S.sammlung))S.sammlung=[]}
+function heal(){if(!S.rt||typeof S.rt!=="object")S.rt={};if(!Array.isArray(S.teilziele))S.teilziele=[];if(!Array.isArray(S.sammlung))S.sammlung=[];if(!S.it||typeof S.it!=="object")S.it={};["anlass","fehlt","oberhaupt","schritt"].forEach(function(k){if(typeof S.it[k]!=="string")S.it[k]=""});if(!Array.isArray(S.it.stimmen))S.it.stimmen=[]}
 heal();
 function fmtD(iso){var d=new Date(iso);return isNaN(d)?"":d.toLocaleDateString("de-DE",{day:"numeric",month:"long",year:"numeric"})}
 function fmtT(iso){var d=new Date(iso);if(isNaN(d))return"";return d.toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"})+(String(iso).length>10?", "+d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" Uhr":"")}
 var timer=null;
-function save(){clearTimeout(timer);timer=setTimeout(function(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}},250)}
+function flush(){clearTimeout(timer);try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function save(){clearTimeout(timer);timer=setTimeout(flush,250)}
+/* Beim Verlassen sofort sichern, damit die letzte Eingabe nicht verloren geht */
+window.addEventListener("pagehide",flush);
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")flush()});
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function $(s){return document.querySelector(s)}
 function fld(id,label,key,area,ph){
@@ -191,7 +205,7 @@ function vUeben(){
   var c=rtCount(),tag=c===RT.length?'<span class="tag done">Fertig</span>':c?'<span class="tag run">'+c+' von '+RT.length+'</span>':'<span class="tag">Etwa 5 Minuten</span>';
   return '<section class="sec"><h2>Übungen</h2><p class="lead">Kleine Arbeiten für dich allein. Nimm dir, was gerade passt.</p>'+
    '<button class="tile" type="button" data-go="rt"><span><b>Was mich antreibt</b><span>Dauer, Nähe, Wechsel, Distanz: eine Selbsteinschätzung nach Riemann und Thomann</span></span>'+tag+'</button>'+
-   '<button class="tile" type="button" disabled><span><b>Mein Inneres Team</b><span>Welche Stimmen melden sich in mir, und wer führt?</span></span><span class="tag">Folgt</span></button>'+
+   '<button class="tile" type="button" data-go="it"><span><b>Mein Inneres Team</b><span>Welche Stimmen melden sich in mir, und wer führt?</span></span>'+(S.it.oberhaupt.trim()?'<span class="tag done">Fertig</span>':S.it.stimmen.length?'<span class="tag run">'+S.it.stimmen.length+(S.it.stimmen.length===1?' Stimme':' Stimmen')+'</span>':'<span class="tag">Etwa 15 Minuten</span>')+'</button>'+
    '<button class="tile" type="button" disabled><span><b>Werte- und Entwicklungsquadrat</b><span>Wo wird eine Stärke von mir zu viel des Guten?</span></span><span class="tag">Folgt</span></button>'+
    '<button class="tile" type="button" disabled><span><b>Mein Profil</b><span>Ergebnisse aus ID37, LINC oder Reiss festhalten</span></span><span class="tag">Folgt</span></button>'+
    '</section>';
@@ -234,6 +248,45 @@ function vRT(){
    '<div id="rt-out">'+(c===RT.length?rtResult():'<p class="note">Dein Bild erscheint, sobald du alle Aussagen eingeschätzt hast.</p>')+'</div>'+
    (c?'<div><button class="back" type="button" data-act="rt-reset">Antworten zurücksetzen</button></div>':'')+
    '</section>';
+}
+var LAUT=[[1,"Leise"],[2,"Deutlich"],[3,"Laut"]];
+var VORSCHLAG=["Die Pflichtbewusste","Der Vorsichtige","Die Ungeduldige","Der Harmoniesucher","Die Kritikerin","Der Freiheitsliebende"];
+function itStage(){
+  var st=S.it.stimmen.filter(function(x){return String(x.name||"").trim()}).slice().sort(function(a,b){return b.laut-a.laut});
+  if(!st.length)return '<p class="hint">Noch steht niemand auf der Bühne.</p>';
+  return st.map(function(x){return '<span class="voice l'+x.laut+'"><b>'+esc(x.name)+'</b>'+(String(x.satz||"").trim()?'<span>„'+esc(x.satz.trim())+'“</span>':'')+'</span>'}).join("");
+}
+function itField(id,label,key,ph){return '<div class="fld"><label for="'+id+'">'+label+'</label><textarea id="'+id+'" data-itf="'+key+'" placeholder="'+esc(ph||"")+'">'+esc(S.it[key])+'</textarea></div>'}
+function vIT(){
+  var used=S.it.stimmen.map(function(x){return x.name});
+  return '<section class="sec"><button class="back" type="button" data-go="ueben">← Zurück zu den Übungen</button>'+
+   '<h2>Mein Inneres Team</h2>'+
+   '<p class="lead">In uns spricht selten nur eine Stimme. Vor einer schwierigen Entscheidung oder einem heiklen Gespräch melden sich mehrere zu Wort, und nicht alle sind sich einig. Friedemann Schulz von Thun nennt das dein Inneres Team. Wer seine Stimmen kennt, kann sie führen, statt von der lautesten geführt zu werden.</p>'+
+   '<div class="card"><h3>1. Worum geht es?</h3>'+itField("it-anlass","Die Situation oder Entscheidung, die dich beschäftigt","anlass","Zum Beispiel ein Gespräch, das ansteht")+'</div>'+
+   '<div class="card"><h3>2. Wer meldet sich?</h3><p class="hint">Gib jeder Stimme einen Namen und einen Satz, den sie sagt. Auch die leisen und die unbequemen gehören dazu. Stell danach ein, wie laut jede ist.</p>'+
+     S.it.stimmen.map(function(x){return '<div class="stimme"><div class="fld"><label for="itn-'+x.id+'">Name der Stimme</label><input id="itn-'+x.id+'" data-its="'+x.id+'" data-sf="name" value="'+esc(x.name)+'" placeholder="Zum Beispiel: Die Ungeduldige"></div>'+
+       '<div class="fld"><label for="its-'+x.id+'">Was sagt sie?</label><input id="its-'+x.id+'" data-its="'+x.id+'" data-sf="satz" value="'+esc(x.satz)+'" placeholder="Ein Satz, so wie sie ihn sagen würde"></div>'+
+       '<div class="row"><div class="chips" role="group" aria-label="Lautstärke">'+LAUT.map(function(o){return '<button type="button" class="chip" data-itlaut="'+x.id+'" data-v="'+o[0]+'" aria-pressed="'+(x.laut===o[0])+'">'+o[1]+'</button>'}).join("")+'</div><button class="back" type="button" data-itdel="'+x.id+'">Entfernen</button></div></div>'}).join("")+
+     '<div class="row"><button class="btn two" type="button" data-act="it-add">Stimme hinzufügen</button></div>'+
+     '<div class="fld"><label>Starthilfe, falls dir noch keine einfällt</label><div class="chips">'+VORSCHLAG.filter(function(v){return used.indexOf(v)<0}).map(function(v){return '<button type="button" class="chip" data-itvor="'+esc(v)+'">'+esc(v)+'</button>'}).join("")+'</div></div></div>'+
+   '<div class="card"><h3>3. Deine Bühne</h3><p class="hint">Je lauter eine Stimme, desto größer steht sie da. Wer steht vorn, und wer wird übertönt?</p><div class="stage" id="it-stage">'+itStage()+'</div></div>'+
+   '<div class="card"><h3>4. Wer wurde noch nicht gehört?</h3>'+itField("it-fehlt","Manche Stimmen melden sich spät oder trauen sich nicht. Gibt es eine, die du überhört hast?","fehlt","")+'</div>'+
+   '<div class="card"><h3>5. Was sagst du als Oberhaupt?</h3>'+itField("it-ober","Du leitest dieses Team. Formuliere eine Antwort, in der die wichtigen Stimmen vorkommen, auch wenn nicht jede bekommt, was sie will.","oberhaupt","Ich entscheide mich für …, weil …")+
+     itField("it-schritt","Mein nächster Schritt","schritt","Was tust du konkret, und bis wann?")+
+     '<div class="row"><button class="btn" type="button" data-copy="it">Ergebnis für Sascha kopieren</button><span class="msg" id="msg-it" aria-live="polite"></span></div>'+
+     '<p class="hint">Der Text landet in deiner Zwischenablage. Schick ihn mir per Mail oder Messenger, wenn du magst.</p></div>'+
+   (S.it.stimmen.length||S.it.anlass?'<div><button class="back" type="button" data-act="it-reset">Neue Aufstellung beginnen</button></div>':'')+
+   '</section>';
+}
+function textIT(){
+  var L=["Mein Inneres Team"+(S.name?" ("+S.name+")":""),""];
+  if(S.it.anlass.trim())L.push("Worum es geht: "+S.it.anlass.trim(),"");
+  var st=S.it.stimmen.filter(function(x){return String(x.name||"").trim()}).slice().sort(function(a,b){return b.laut-a.laut});
+  if(st.length){L.push("Wer sich meldet:");st.forEach(function(x){L.push("- "+x.name+" ("+LAUT[x.laut-1][1].toLowerCase()+")"+(String(x.satz||"").trim()?": "+x.satz.trim():""))});L.push("")}
+  if(S.it.fehlt.trim())L.push("Noch nicht gehört: "+S.it.fehlt.trim(),"");
+  if(S.it.oberhaupt.trim())L.push("Meine Antwort als Oberhaupt: "+S.it.oberhaupt.trim(),"");
+  if(S.it.schritt.trim())L.push("Mein nächster Schritt: "+S.it.schritt.trim());
+  return L.join("\n").trim();
 }
 function vSascha(){
   return '<section class="sec"><h2>Für Sascha</h2><p class="lead">Deine Vorbereitung auf unseren nächsten Termin. Zwei Minuten reichen.</p><div class="card">'+
@@ -303,15 +356,22 @@ function copy(text,msgId,outId,okText){
 }
 
 /* ---------- Aufbau ---------- */
-var VIEWS={weg:vWeg,ueben:vUeben,rt:vRT,sascha:vSascha,sicher:vSicher};
+var VIEWS={weg:vWeg,ueben:vUeben,rt:vRT,it:vIT,sascha:vSascha,sicher:vSicher};
 function render(){
   var v=VIEWS[S.view]?S.view:"weg";
   $("#app").innerHTML=VIEWS[v]();
-  var cur=v==="rt"?"ueben":v;
+  var cur=v==="rt"||v==="it"?"ueben":v;
   $("#nav").innerHTML=NAV.map(function(n){return '<button type="button" data-go="'+n[0]+'"'+(n[0]===cur?' aria-current="page"':'')+'>'+n[1]+'</button>'}).join("");
 }
 document.addEventListener("click",function(e){
-  var t=e.target.closest("[data-go],[data-chip],[data-rt],[data-copy],[data-act]");if(!t||t.disabled)return;
+  var t=e.target.closest("[data-go],[data-chip],[data-rt],[data-copy],[data-act],[data-itlaut],[data-itdel],[data-itvor]");if(!t||t.disabled)return;
+  function newId(){return Math.random().toString(36).slice(2,9)}
+  if(t.dataset.itlaut){var sx=S.it.stimmen.filter(function(x){return x.id===t.dataset.itlaut})[0];if(sx){sx.laut=+t.dataset.v;save();[].forEach.call(t.parentNode.children,function(c){c.setAttribute("aria-pressed",String(sx.laut===+c.dataset.v))});$("#it-stage").innerHTML=itStage()}return}
+  if(t.dataset.itdel){S.it.stimmen=S.it.stimmen.filter(function(x){return x.id!==t.dataset.itdel});save();render();return}
+  if(t.dataset.itvor){S.it.stimmen.push({id:newId(),name:t.dataset.itvor,satz:"",laut:2});save();render();return}
+  if(t.dataset.act==="it-add"){var nid=newId();S.it.stimmen.push({id:nid,name:"",satz:"",laut:2});save();render();var nf=$("#itn-"+nid);nf&&nf.focus();return}
+  if(t.dataset.act==="it-reset"){S.it={anlass:"",stimmen:[],fehlt:"",oberhaupt:"",schritt:""};save();render();window.scrollTo(0,0);return}
+  if(t.dataset.copy==="it"){copy(textIT(),"msg-it",null,"Kopiert. Jetzt an Sascha schicken.");return}
   if(t.dataset.go){S.view=t.dataset.go;save();render();window.scrollTo(0,0);return}
   if(t.dataset.chip){var k=t.dataset.chip,v=t.dataset.v;S[k]=S[k]===v?"":v;save();
     [].forEach.call(t.parentNode.children,function(c){c.setAttribute("aria-pressed",String(S[k]===c.dataset.v))});return}
@@ -337,7 +397,10 @@ document.addEventListener("click",function(e){
     S.sammlung.push({datum:new Date().toISOString().slice(0,10),text:tx,von:"ich"});S.eigen="";save();render();return}
 });
 document.addEventListener("input",function(e){
-  var t=e.target;if(!t.dataset||!t.dataset.k)return;S[t.dataset.k]=t.value;save();
+  var t=e.target;if(!t.dataset)return;
+  if(t.dataset.itf){S.it[t.dataset.itf]=t.value;save();return}
+  if(t.dataset.its){var sx=S.it.stimmen.filter(function(x){return x.id===t.dataset.its})[0];if(sx){sx[t.dataset.sf]=t.value;save();$("#it-stage").innerHTML=itStage()}return}
+  if(!t.dataset.k)return;S[t.dataset.k]=t.value;save();
   var o=$("#out-vorb");if(o)o.value=textVorb();
 });
 render();
