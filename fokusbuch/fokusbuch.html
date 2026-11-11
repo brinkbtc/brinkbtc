@@ -92,6 +92,20 @@ details.card[open] summary{margin-bottom:4px}
 .voice.l3{border-color:var(--red);padding:12px 16px}
 .voice.l3 b{font-size:26px;color:var(--red)}
 .voice.l3 span{font-size:15px;color:var(--ink-2)}
+.wqgrid{display:grid;grid-template-columns:minmax(0,1fr) 58px minmax(0,1fr);gap:4px;align-items:stretch}
+.wq{display:flex;flex-direction:column;gap:4px;border-radius:14px;padding:10px;hyphens:auto;-webkit-hyphens:auto;min-width:0;min-height:76px;justify-content:center}
+.wq.top{background:var(--ok-bg);border:1px solid #c9dccf}
+.wq.low{background:var(--red-soft);border:1px solid #ebc9c9}
+.wq .wl{font:700 10px/1.25 var(--body);letter-spacing:.04em;text-transform:uppercase;color:var(--mute)}
+.wq b{font:500 clamp(15px,4.2vw,19px)/1.2 var(--display);overflow-wrap:break-word}
+.wq i{font-size:14px;color:var(--mute)}
+.wa{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--mute);text-align:center}
+.wa span{font-size:20px;line-height:1}
+.wa small{font-size:11px;line-height:1.2}
+.wa.c{color:var(--red);padding:4px}
+.wa.c span{font-size:28px}
+.wa.c small{font-weight:700;max-width:7.5em}
+details.note summary{cursor:pointer}
 .nav{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--card);border-top:1px solid var(--rule);
   padding:8px max(8px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
 .nav-in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
@@ -147,9 +161,9 @@ var DIM={
  w:["Wechsel","Du suchst Bewegung. Du bringst Ideen und Schwung und kannst andere mitreißen. Unter Druck kann es dir schwerfallen, bei einer Sache zu bleiben."]
 };
 
-var S={view:"weg",name:"",ziel:"",fokus:"",verein:"",vstatus:"",vnotiz:"",frage:"",themen:"",rt:{},rta:"",rtb:"",rtc:"",gestartet:false,teilziele:[],sammlung:[],naechster:"",eigen:"",it:{anlass:"",stimmen:[],fehlt:"",oberhaupt:"",schritt:""},profile:[]};
+var S={view:"weg",name:"",ziel:"",fokus:"",verein:"",vstatus:"",vnotiz:"",frage:"",themen:"",rt:{},rta:"",rtb:"",rtc:"",gestartet:false,teilziele:[],sammlung:[],naechster:"",eigen:"",it:{anlass:"",stimmen:[],fehlt:"",oberhaupt:"",schritt:""},profile:[],weq:{}};
 try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);if(p&&typeof p==="object")Object.keys(S).forEach(function(k){if(k in p)S[k]=p[k]})}}catch(e){}
-function heal(){if(!S.rt||typeof S.rt!=="object")S.rt={};if(!Array.isArray(S.teilziele))S.teilziele=[];if(!Array.isArray(S.sammlung))S.sammlung=[];if(!S.it||typeof S.it!=="object")S.it={};["anlass","fehlt","oberhaupt","schritt"].forEach(function(k){if(typeof S.it[k]!=="string")S.it[k]=""});if(!Array.isArray(S.it.stimmen))S.it.stimmen=[];if(!Array.isArray(S.profile))S.profile=[]}
+function heal(){if(!S.rt||typeof S.rt!=="object")S.rt={};if(!Array.isArray(S.teilziele))S.teilziele=[];if(!Array.isArray(S.sammlung))S.sammlung=[];if(!S.it||typeof S.it!=="object")S.it={};["anlass","fehlt","oberhaupt","schritt"].forEach(function(k){if(typeof S.it[k]!=="string")S.it[k]=""});if(!Array.isArray(S.it.stimmen))S.it.stimmen=[];if(!Array.isArray(S.profile))S.profile=[];if(!S.weq||typeof S.weq!=="object")S.weq={};["staerke","zuviel","schwester","gegen","merke","angst","schritt"].forEach(function(k){if(typeof S.weq[k]!=="string")S.weq[k]=""})}
 heal();
 function fmtD(iso){var d=new Date(iso);return isNaN(d)?"":d.toLocaleDateString("de-DE",{day:"numeric",month:"long",year:"numeric"})}
 function fmtT(iso){var d=new Date(iso);if(isNaN(d))return"";return d.toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"})+(String(iso).length>10?", "+d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" Uhr":"")}
@@ -206,7 +220,7 @@ function vUeben(){
   return '<section class="sec"><h2>Übungen</h2><p class="lead">Kleine Arbeiten für dich allein. Nimm dir, was gerade passt.</p>'+
    '<button class="tile" type="button" data-go="rt"><span><b>Was mich antreibt</b><span>Dauer, Nähe, Wechsel, Distanz: eine Selbsteinschätzung nach Riemann und Thomann</span></span>'+tag+'</button>'+
    '<button class="tile" type="button" data-go="it"><span><b>Mein Inneres Team</b><span>Welche Stimmen melden sich in mir, und wer führt?</span></span>'+(S.it.oberhaupt.trim()?'<span class="tag done">Fertig</span>':S.it.stimmen.length?'<span class="tag run">'+S.it.stimmen.length+(S.it.stimmen.length===1?' Stimme':' Stimmen')+'</span>':'<span class="tag">Etwa 15 Minuten</span>')+'</button>'+
-   '<button class="tile" type="button" disabled><span><b>Werte- und Entwicklungsquadrat</b><span>Wo wird eine Stärke von mir zu viel des Guten?</span></span><span class="tag">Folgt</span></button>'+
+   '<button class="tile" type="button" data-go="weq"><span><b>Werte- und Entwicklungsquadrat</b><span>Wo wird eine Stärke von mir zu viel des Guten?</span></span>'+(S.weq.schritt.trim()?'<span class="tag done">Fertig</span>':(S.weq.staerke.trim()?'<span class="tag run">Begonnen</span>':'<span class="tag">Etwa 15 Minuten</span>'))+'</button>'+
    '<button class="tile" type="button" data-go="profil"><span><b>Mein Profil</b><span>Ergebnisse aus ID37, LINC oder Reiss festhalten</span></span>'+(S.profile.length?'<span class="tag done">'+S.profile.length+(S.profile.length===1?' Profil':' Profile')+'</span>':'<span class="tag">Nach der Auswertung</span>')+'</button>'+
    '</section>';
 }
@@ -310,6 +324,45 @@ function textProfil(x){
   if(x.nutzen)L.push("Was ich nutzen und im Blick behalten will:",x.nutzen.trim());
   return L.join("\n").trim();
 }
+function weqCell(k,label,cls){var v=String(S.weq[k]||"").trim();return '<div class="wq '+cls+'"><span class="wl">'+label+'</span>'+(v?'<b>'+esc(v)+'</b>':'<i>noch offen</i>')+'</div>'}
+function weqSquare(){
+  return weqCell("staerke","Meine Stärke","top")+'<div class="wa h" aria-hidden="true"><span>⟷</span><small>Balance</small></div>'+weqCell("schwester","Schwester­tugend","top")+
+   '<div class="wa v" aria-hidden="true"><span>↓</span><small>zu viel</small></div><div class="wa c"><span aria-hidden="true">↗</span><small>Entwicklungs­richtung</small></div><div class="wa v" aria-hidden="true"><span>↓</span><small>zu viel</small></div>'+
+   weqCell("zuviel","Zu viel des Guten","low")+'<div></div>'+weqCell("gegen","Zu viel der Schwester","low");
+}
+function weqField(id,label,key,ph,area){return '<div class="fld"><label for="'+id+'">'+label+'</label>'+(area?'<textarea id="'+id+'" data-wf="'+key+'" placeholder="'+esc(ph||"")+'">'+esc(S.weq[key])+'</textarea>':'<input id="'+id+'" data-wf="'+key+'" value="'+esc(S.weq[key])+'" placeholder="'+esc(ph||"")+'">')+'</div>'}
+function vWEQ(){
+  return '<section class="sec"><button class="back" type="button" data-go="ueben">← Zurück zu den Übungen</button>'+
+   '<h2>Werte- und Entwicklungsquadrat</h2>'+
+   '<p class="lead">Jede Stärke braucht eine Schwester, damit sie nicht kippt. Das Werte- und Entwicklungsquadrat von Friedemann Schulz von Thun zeigt, wohin eine Stärke ohne Ausgleich rutscht und in welche Richtung du wachsen kannst.</p>'+
+   '<details class="note"><summary><b>Beispiel ansehen</b></summary><p style="margin-top:8px">Sparsamkeit braucht Großzügigkeit als Schwester. Ohne sie wird Sparsamkeit zu Geiz. Großzügigkeit ohne Sparsamkeit wird zu Verschwendung. Wer zum Geiz neigt, entwickelt sich in Richtung Großzügigkeit, ohne seine Sparsamkeit aufzugeben.</p></details>'+
+   '<div class="card"><h3>1. Meine Stärke</h3>'+weqField("wq-st","Eine Stärke, auf die ich mich verlassen kann","staerke","Zum Beispiel: Verlässlichkeit")+'</div>'+
+   '<div class="card"><h3>2. Zu viel des Guten</h3>'+weqField("wq-zv","Was wird aus meiner Stärke, wenn ich übertreibe? So, wie andere es dann erleben.","zuviel","Zum Beispiel: Kontrolle")+'</div>'+
+   '<div class="card"><h3>3. Die Schwestertugend</h3>'+weqField("wq-sw","Welche Stärke ergänzt meine, sodass beide sich in Balance halten? Oft ist es die, die mir eher schwerfällt.","schwester","Zum Beispiel: Vertrauen")+'</div>'+
+   '<div class="card"><h3>4. Zu viel der Schwester</h3>'+weqField("wq-gg","Was wäre die Übertreibung davon? Oft ist es genau das, wovor ich mich hüte.","gegen","Zum Beispiel: Gleichgültigkeit")+'</div>'+
+   '<div class="card"><h3>Mein Quadrat</h3><div class="wqgrid" id="weq-sq" lang="de">'+weqSquare()+'</div>'+
+     '<p class="hint">Der Weg führt nicht weg von deiner Stärke, sondern zusätzlich hin zur Schwester. Die Entwicklungsrichtung zeigt vom Zuviel deiner Stärke zur Schwestertugend.</p></div>'+
+   '<div class="card"><h3>Was heißt das für mich?</h3>'+
+     weqField("wq-mk","Woran merke ich, dass ich ins Zuviel rutsche?","merke","Eine typische Situation, ein Gefühl, ein Satz, den ich dann sage",true)+
+     weqField("wq-an","Was befürchte ich, wenn ich mehr Schwestertugend lebe?","angst","",true)+
+     weqField("wq-sr","Ein kleiner Schritt in Richtung Schwestertugend, den ich bis zu unserem nächsten Termin ausprobiere","schritt","Was, wann, mit wem",true)+
+     '<div class="row"><button class="btn" type="button" data-copy="weq">Ergebnis für Sascha kopieren</button><span class="msg" id="msg-weq" aria-live="polite"></span></div>'+
+     '<p class="hint">Der Text landet in deiner Zwischenablage. Schick ihn mir per Mail oder Messenger, wenn du magst.</p></div>'+
+   (S.weq.staerke||S.weq.schwester?'<div><button class="back" type="button" data-act="weq-reset">Neues Quadrat beginnen</button></div>':'')+
+   '</section>';
+}
+function textWEQ(){
+  var w=S.weq,L=["Mein Werte- und Entwicklungsquadrat"+(S.name?" ("+S.name+")":""),""];
+  if(w.staerke)L.push("Meine Stärke: "+w.staerke.trim());
+  if(w.zuviel)L.push("Zu viel des Guten: "+w.zuviel.trim());
+  if(w.schwester)L.push("Schwestertugend: "+w.schwester.trim());
+  if(w.gegen)L.push("Zu viel der Schwester: "+w.gegen.trim());
+  L.push("");
+  if(w.merke)L.push("Woran ich das Zuviel merke:",w.merke.trim(),"");
+  if(w.angst)L.push("Was ich befürchte:",w.angst.trim(),"");
+  if(w.schritt)L.push("Mein kleiner Schritt:",w.schritt.trim());
+  return L.join("\n").trim();
+}
 function vSascha(){
   return '<section class="sec"><h2>Für Sascha</h2><p class="lead">Deine Vorbereitung auf unseren nächsten Termin. Zwei Minuten reichen.</p><div class="card">'+
    fld("f-frage","Was soll nach unserer nächsten Stunde anders sein als vorher?","frage",true,"Gern in einem Satz")+
@@ -378,11 +431,11 @@ function copy(text,msgId,outId,okText){
 }
 
 /* ---------- Aufbau ---------- */
-var VIEWS={weg:vWeg,ueben:vUeben,rt:vRT,it:vIT,profil:vProfil,sascha:vSascha,sicher:vSicher};
+var VIEWS={weg:vWeg,ueben:vUeben,rt:vRT,it:vIT,profil:vProfil,weq:vWEQ,sascha:vSascha,sicher:vSicher};
 function render(){
   var v=VIEWS[S.view]?S.view:"weg";
   $("#app").innerHTML=VIEWS[v]();
-  var cur=v==="rt"||v==="it"||v==="profil"?"ueben":v;
+  var cur=["rt","it","profil","weq"].indexOf(v)>=0?"ueben":v;
   $("#nav").innerHTML=NAV.map(function(n){return '<button type="button" data-go="'+n[0]+'"'+(n[0]===cur?' aria-current="page"':'')+'>'+n[1]+'</button>'}).join("");
 }
 document.addEventListener("click",function(e){
@@ -391,6 +444,8 @@ document.addEventListener("click",function(e){
   if(t.dataset.pv){var px=prof(t.dataset.pv);if(px){px.verfahren=px.verfahren===t.dataset.v?"":t.dataset.v;save();[].forEach.call(t.parentNode.children,function(c){c.setAttribute("aria-pressed",String(px.verfahren===c.dataset.v))})}return}
   if(t.dataset.pdel){S.profile=S.profile.filter(function(x){return x.id!==t.dataset.pdel});save();render();return}
   if(t.dataset.copyp){var py=prof(t.dataset.copyp);if(py)copy(textProfil(py),"msg-p-"+py.id,null,"Kopiert. Jetzt an Sascha schicken.");return}
+  if(t.dataset.copy==="weq"){copy(textWEQ(),"msg-weq",null,"Kopiert. Jetzt an Sascha schicken.");return}
+  if(t.dataset.act==="weq-reset"){S.weq={};heal();save();render();window.scrollTo(0,0);return}
   if(t.dataset.act==="p-add"){var pid=Math.random().toString(36).slice(2,9);S.profile.push({id:pid,verfahren:"",datum:"",ergebnisse:"",erkenne:"",nutzen:""});save();render();var pe=$("#pe-"+pid);pe&&pe.scrollIntoView({block:"center"});return}
   function newId(){return Math.random().toString(36).slice(2,9)}
   if(t.dataset.itlaut){var sx=S.it.stimmen.filter(function(x){return x.id===t.dataset.itlaut})[0];if(sx){sx.laut=+t.dataset.v;save();[].forEach.call(t.parentNode.children,function(c){c.setAttribute("aria-pressed",String(sx.laut===+c.dataset.v))});$("#it-stage").innerHTML=itStage()}return}
@@ -426,6 +481,7 @@ document.addEventListener("click",function(e){
 document.addEventListener("input",function(e){
   var t=e.target;if(!t.dataset)return;
   if(t.dataset.itf){S.it[t.dataset.itf]=t.value;save();return}
+  if(t.dataset.wf){S.weq[t.dataset.wf]=t.value;save();var sq=$("#weq-sq");if(sq)sq.innerHTML=weqSquare();return}
   if(t.dataset.pf){var pz=S.profile.filter(function(x){return x.id===t.dataset.pf})[0];if(pz){pz[t.dataset.k2]=t.value;save()}return}
   if(t.dataset.its){var sx=S.it.stimmen.filter(function(x){return x.id===t.dataset.its})[0];if(sx){sx[t.dataset.sf]=t.value;save();$("#it-stage").innerHTML=itStage()}return}
   if(!t.dataset.k)return;S[t.dataset.k]=t.value;save();
