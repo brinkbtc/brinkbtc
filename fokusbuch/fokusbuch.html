@@ -147,9 +147,9 @@ var DIM={
  w:["Wechsel","Du suchst Bewegung. Du bringst Ideen und Schwung und kannst andere mitreißen. Unter Druck kann es dir schwerfallen, bei einer Sache zu bleiben."]
 };
 
-var S={view:"weg",name:"",ziel:"",fokus:"",verein:"",vstatus:"",vnotiz:"",frage:"",themen:"",rt:{},rta:"",rtb:"",rtc:"",gestartet:false,teilziele:[],sammlung:[],naechster:"",eigen:"",it:{anlass:"",stimmen:[],fehlt:"",oberhaupt:"",schritt:""}};
+var S={view:"weg",name:"",ziel:"",fokus:"",verein:"",vstatus:"",vnotiz:"",frage:"",themen:"",rt:{},rta:"",rtb:"",rtc:"",gestartet:false,teilziele:[],sammlung:[],naechster:"",eigen:"",it:{anlass:"",stimmen:[],fehlt:"",oberhaupt:"",schritt:""},profile:[]};
 try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);if(p&&typeof p==="object")Object.keys(S).forEach(function(k){if(k in p)S[k]=p[k]})}}catch(e){}
-function heal(){if(!S.rt||typeof S.rt!=="object")S.rt={};if(!Array.isArray(S.teilziele))S.teilziele=[];if(!Array.isArray(S.sammlung))S.sammlung=[];if(!S.it||typeof S.it!=="object")S.it={};["anlass","fehlt","oberhaupt","schritt"].forEach(function(k){if(typeof S.it[k]!=="string")S.it[k]=""});if(!Array.isArray(S.it.stimmen))S.it.stimmen=[]}
+function heal(){if(!S.rt||typeof S.rt!=="object")S.rt={};if(!Array.isArray(S.teilziele))S.teilziele=[];if(!Array.isArray(S.sammlung))S.sammlung=[];if(!S.it||typeof S.it!=="object")S.it={};["anlass","fehlt","oberhaupt","schritt"].forEach(function(k){if(typeof S.it[k]!=="string")S.it[k]=""});if(!Array.isArray(S.it.stimmen))S.it.stimmen=[];if(!Array.isArray(S.profile))S.profile=[]}
 heal();
 function fmtD(iso){var d=new Date(iso);return isNaN(d)?"":d.toLocaleDateString("de-DE",{day:"numeric",month:"long",year:"numeric"})}
 function fmtT(iso){var d=new Date(iso);if(isNaN(d))return"";return d.toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"})+(String(iso).length>10?", "+d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" Uhr":"")}
@@ -207,7 +207,7 @@ function vUeben(){
    '<button class="tile" type="button" data-go="rt"><span><b>Was mich antreibt</b><span>Dauer, Nähe, Wechsel, Distanz: eine Selbsteinschätzung nach Riemann und Thomann</span></span>'+tag+'</button>'+
    '<button class="tile" type="button" data-go="it"><span><b>Mein Inneres Team</b><span>Welche Stimmen melden sich in mir, und wer führt?</span></span>'+(S.it.oberhaupt.trim()?'<span class="tag done">Fertig</span>':S.it.stimmen.length?'<span class="tag run">'+S.it.stimmen.length+(S.it.stimmen.length===1?' Stimme':' Stimmen')+'</span>':'<span class="tag">Etwa 15 Minuten</span>')+'</button>'+
    '<button class="tile" type="button" disabled><span><b>Werte- und Entwicklungsquadrat</b><span>Wo wird eine Stärke von mir zu viel des Guten?</span></span><span class="tag">Folgt</span></button>'+
-   '<button class="tile" type="button" disabled><span><b>Mein Profil</b><span>Ergebnisse aus ID37, LINC oder Reiss festhalten</span></span><span class="tag">Folgt</span></button>'+
+   '<button class="tile" type="button" data-go="profil"><span><b>Mein Profil</b><span>Ergebnisse aus ID37, LINC oder Reiss festhalten</span></span>'+(S.profile.length?'<span class="tag done">'+S.profile.length+(S.profile.length===1?' Profil':' Profile')+'</span>':'<span class="tag">Nach der Auswertung</span>')+'</button>'+
    '</section>';
 }
 function crossSVG(s){
@@ -288,6 +288,28 @@ function textIT(){
   if(S.it.schritt.trim())L.push("Mein nächster Schritt: "+S.it.schritt.trim());
   return L.join("\n").trim();
 }
+var VERF=["ID37","LINC Personality Profiler","Reiss Motivation Profile","Anderes Verfahren"];
+function vProfil(){
+  return '<section class="sec"><button class="back" type="button" data-go="ueben">← Zurück zu den Übungen</button>'+
+   '<h2>Mein Profil</h2>'+
+   '<p class="lead">Ein Persönlichkeitsprofil beschreibt nicht, wer du bist, sondern was dich antreibt und wie du am liebsten arbeitest. Hier hältst du fest, was davon für dich wichtig ist, damit es nicht in einem Bericht verschwindet.</p>'+
+   '<p class="note">Den vollständigen Bericht bewahrst du selbst auf. Trag hier nur ein, was du behalten willst: deine wichtigsten Ergebnisse und was sie für dich bedeuten. Wenn wir die Auswertung gemeinsam machen, ergänze es am besten direkt nach unserem Termin.</p>'+
+   S.profile.map(function(x){return '<div class="card"><div class="fld"><label>Verfahren</label><div class="chips" role="group">'+VERF.map(function(v){return '<button type="button" class="chip" data-pv="'+x.id+'" data-v="'+esc(v)+'" aria-pressed="'+(x.verfahren===v)+'">'+esc(v)+'</button>'}).join("")+'</div></div>'+
+     '<div class="fld"><label for="pd-'+x.id+'">Wann gemacht?</label><input id="pd-'+x.id+'" type="date" data-pf="'+x.id+'" data-k2="datum" value="'+esc(x.datum)+'"></div>'+
+     '<div class="fld"><label for="pe-'+x.id+'">Meine wichtigsten Ergebnisse</label><textarea id="pe-'+x.id+'" data-pf="'+x.id+'" data-k2="ergebnisse" placeholder="Was ist bei dir besonders stark oder besonders schwach ausgeprägt?">'+esc(x.ergebnisse)+'</textarea></div>'+
+     '<div class="fld"><label for="pk-'+x.id+'">Wo erkenne ich mich im Alltag wieder?</label><textarea id="pk-'+x.id+'" data-pf="'+x.id+'" data-k2="erkenne" placeholder="Eine Situation aus der letzten Zeit, in der genau das sichtbar wurde">'+esc(x.erkenne)+'</textarea></div>'+
+     '<div class="fld"><label for="pn-'+x.id+'">Was will ich nutzen, was will ich im Blick behalten?</label><textarea id="pn-'+x.id+'" data-pf="'+x.id+'" data-k2="nutzen" placeholder="">'+esc(x.nutzen)+'</textarea></div>'+
+     '<div class="row"><button class="btn" type="button" data-copyp="'+x.id+'">Für Sascha kopieren</button><span class="msg" id="msg-p-'+x.id+'" aria-live="polite"></span><button class="back" type="button" data-pdel="'+x.id+'">Entfernen</button></div></div>'}).join("")+
+   '<div class="row"><button class="btn two" type="button" data-act="p-add">'+(S.profile.length?'Weiteres Profil festhalten':'Profil festhalten')+'</button></div>'+
+   '</section>';
+}
+function textProfil(x){
+  var L=["Mein Profil"+(x.verfahren?": "+x.verfahren:"")+(S.name?" ("+S.name+")":""),""];
+  if(x.ergebnisse)L.push("Meine wichtigsten Ergebnisse:",x.ergebnisse.trim(),"");
+  if(x.erkenne)L.push("Wo ich mich wiedererkenne:",x.erkenne.trim(),"");
+  if(x.nutzen)L.push("Was ich nutzen und im Blick behalten will:",x.nutzen.trim());
+  return L.join("\n").trim();
+}
 function vSascha(){
   return '<section class="sec"><h2>Für Sascha</h2><p class="lead">Deine Vorbereitung auf unseren nächsten Termin. Zwei Minuten reichen.</p><div class="card">'+
    fld("f-frage","Was soll nach unserer nächsten Stunde anders sein als vorher?","frage",true,"Gern in einem Satz")+
@@ -356,15 +378,20 @@ function copy(text,msgId,outId,okText){
 }
 
 /* ---------- Aufbau ---------- */
-var VIEWS={weg:vWeg,ueben:vUeben,rt:vRT,it:vIT,sascha:vSascha,sicher:vSicher};
+var VIEWS={weg:vWeg,ueben:vUeben,rt:vRT,it:vIT,profil:vProfil,sascha:vSascha,sicher:vSicher};
 function render(){
   var v=VIEWS[S.view]?S.view:"weg";
   $("#app").innerHTML=VIEWS[v]();
-  var cur=v==="rt"||v==="it"?"ueben":v;
+  var cur=v==="rt"||v==="it"||v==="profil"?"ueben":v;
   $("#nav").innerHTML=NAV.map(function(n){return '<button type="button" data-go="'+n[0]+'"'+(n[0]===cur?' aria-current="page"':'')+'>'+n[1]+'</button>'}).join("");
 }
 document.addEventListener("click",function(e){
-  var t=e.target.closest("[data-go],[data-chip],[data-rt],[data-copy],[data-act],[data-itlaut],[data-itdel],[data-itvor]");if(!t||t.disabled)return;
+  var t=e.target.closest("[data-go],[data-chip],[data-rt],[data-copy],[data-act],[data-itlaut],[data-itdel],[data-itvor],[data-pv],[data-pdel],[data-copyp]");if(!t||t.disabled)return;
+  function prof(id){return S.profile.filter(function(x){return x.id===id})[0]}
+  if(t.dataset.pv){var px=prof(t.dataset.pv);if(px){px.verfahren=px.verfahren===t.dataset.v?"":t.dataset.v;save();[].forEach.call(t.parentNode.children,function(c){c.setAttribute("aria-pressed",String(px.verfahren===c.dataset.v))})}return}
+  if(t.dataset.pdel){S.profile=S.profile.filter(function(x){return x.id!==t.dataset.pdel});save();render();return}
+  if(t.dataset.copyp){var py=prof(t.dataset.copyp);if(py)copy(textProfil(py),"msg-p-"+py.id,null,"Kopiert. Jetzt an Sascha schicken.");return}
+  if(t.dataset.act==="p-add"){var pid=Math.random().toString(36).slice(2,9);S.profile.push({id:pid,verfahren:"",datum:"",ergebnisse:"",erkenne:"",nutzen:""});save();render();var pe=$("#pe-"+pid);pe&&pe.scrollIntoView({block:"center"});return}
   function newId(){return Math.random().toString(36).slice(2,9)}
   if(t.dataset.itlaut){var sx=S.it.stimmen.filter(function(x){return x.id===t.dataset.itlaut})[0];if(sx){sx.laut=+t.dataset.v;save();[].forEach.call(t.parentNode.children,function(c){c.setAttribute("aria-pressed",String(sx.laut===+c.dataset.v))});$("#it-stage").innerHTML=itStage()}return}
   if(t.dataset.itdel){S.it.stimmen=S.it.stimmen.filter(function(x){return x.id!==t.dataset.itdel});save();render();return}
@@ -399,6 +426,7 @@ document.addEventListener("click",function(e){
 document.addEventListener("input",function(e){
   var t=e.target;if(!t.dataset)return;
   if(t.dataset.itf){S.it[t.dataset.itf]=t.value;save();return}
+  if(t.dataset.pf){var pz=S.profile.filter(function(x){return x.id===t.dataset.pf})[0];if(pz){pz[t.dataset.k2]=t.value;save()}return}
   if(t.dataset.its){var sx=S.it.stimmen.filter(function(x){return x.id===t.dataset.its})[0];if(sx){sx[t.dataset.sf]=t.value;save();$("#it-stage").innerHTML=itStage()}return}
   if(!t.dataset.k)return;S[t.dataset.k]=t.value;save();
   var o=$("#out-vorb");if(o)o.value=textVorb();

@@ -356,6 +356,7 @@ dialog{border-radius:var(--r-lg);background:var(--paper);box-shadow:0 30px 80px 
       <span class="save" id="save" aria-live="polite"></span>
       <button class="btn ghost" data-act="journal" type="button">Journal</button>
       <button class="btn ghost" data-act="quartal" type="button">Quartal</button>
+      <button class="btn ghost" data-act="backup" type="button" title="Alle Klienten und das Journal als Datei sichern">Sicherung</button>
       <button class="btn red" id="btn-new" type="button">+ Neuer Klient</button>
     </div>
   </header>
@@ -407,6 +408,7 @@ dialog{border-radius:var(--r-lg);background:var(--paper);box-shadow:0 30px 80px 
     <div id="q-talk"></div>
     <div class="grid2">
       <div class="fld"><label for="q-datum">Datum</label><input id="q-datum" type="date"></div>
+      <div class="fld"><label for="q-next">Nächster Termin</label><input id="q-next" type="datetime-local"></div>
       <div class="fld"><label for="q-art">Art</label><select id="q-art"><option>Sitzung</option><option>Follow-up</option><option>Ausfall</option></select></div>
       <div class="fld"><label for="q-skala">Skala (0–10)</label><input id="q-skala" type="number" min="0" max="10" step="0.5"></div>
     </div>
@@ -613,9 +615,11 @@ function renderPulse(){
     b.innerHTML=S.confirmEx
       ?`<div class="notice"><span>${ex} Beispielklienten endgültig entfernen?</span><button class="btn small red" data-act="ex-yes">Ja, entfernen</button><button class="btn small ghost" data-act="ex-no">Abbrechen</button></div>`
       :`<div class="notice"><span>Das Board zeigt ${ex} erfundene Beispielklienten, damit du siehst, wie es arbeitet. Sie sind mit <span class="tag">Beispiel</span> markiert.</span>${S.canWrite?`<button class="linkish" data-act="ex-ask">Beispiele entfernen</button>`:""}</div>`;
+  }else if(S.loaded&&S.docs.size&&backupAlt()){b.innerHTML=`<div class="notice"><span>${backupAlt()}</span>${S.canWrite?`<button class="linkish" data-act="backup">Jetzt sichern</button>`:""}</div>`
   }else b.innerHTML=S.stale?`<div class="notice">Der Speicher antwortet gerade nicht. Was du siehst, ist eventuell nicht aktuell.</div>`:"";
   renderWeek();
 }
+function backupAlt(){let l="";try{l=localStorage.getItem("cb-backup")||""}catch(_){}if(!l)return "Von deinen Klienten gibt es noch keine Sicherung auf diesem Gerät.";const k=daysFrom(l);return k<=-14?"Deine letzte Sicherung ist "+(-k)+" Tage alt.":""}
 function renderWeek(){
   const el=$("#week");if(!S.loaded||!S.docs.size){el.innerHTML="";return}
   const items=[],inWeek=dt=>{const k=daysFrom(dt);return k!==null&&k>=0&&k<=7};
@@ -916,6 +920,7 @@ function tabSitzungen(d){
       ${talkBox("s-")}
       <div class="grid2">
         <div class="fld"><label for="s-datum">Datum</label><input id="s-datum" type="date" value="${todayISO()}"></div>
+        <div class="fld"><label for="s-next">Nächster Termin</label><input id="s-next" type="datetime-local" value="${esc(fbTermin(d))}"></div>
         <div class="fld"><label for="s-skala">Skala heute (0–10)</label><input id="s-skala" type="number" min="0" max="10" step="0.5" placeholder="Wo stehen Sie heute?"></div>
         <div class="fld"><label for="s-art">Art</label><select id="s-art"><option${(d.wiederaufnahmen||[]).length?"":" selected"}>Sitzung</option><option${(d.wiederaufnahmen||[]).length?" selected":""}>Follow-up</option><option>Ausfall</option></select></div>
       </div>
@@ -1296,7 +1301,7 @@ function showText(txt){const dl=$("#dlg-text"),ta=$("#t-text");ta.value=txt;try{
 function copyText(txt,what){
   try{navigator.clipboard.writeText(txt).then(()=>setSave(what+" kopiert"),()=>showText(txt))}catch(_){showText(txt)}
 }
-function addSession(id,s){patch(id,d=>{d.sitzungen=(d.sitzungen||[]).concat(s);if(phaseOf(d)<4&&s.art!=="Ausfall"){d.phase=4;d.phaseSeit=Object.assign({},d.phaseSeit);d.phaseSeit[4]=d.phaseSeit[4]||s.datum}},{drawer:true,now:true})}
+function addSession(id,s,next){patch(id,d=>{d.sitzungen=(d.sitzungen||[]).concat(s);if(next)d.naechsterTermin=next;if(phaseOf(d)<4&&s.art!=="Ausfall"){d.phase=4;d.phaseSeit=Object.assign({},d.phaseSeit);d.phaseSeit[4]=d.phaseSeit[4]||s.datum}},{drawer:true,now:true})}
 
 /* ---------- Ereignisse ---------- */
 function setPhase(id,n){patch(id,d=>{d.phase=n;d.phaseSeit=d.phaseSeit||{};if(!d.phaseSeit[n])d.phaseSeit[n]=todayISO();if(n===6&&!d.ausgang)d.ausgang="ziel"},{drawer:true,now:true})}
@@ -1363,6 +1368,13 @@ document.addEventListener("click",e=>{
     patch(S.open,x=>{x.abschlussbrief=briefEntwurf(x,du)},{drawer:true,now:true});
   }
   else if(a==="gas-add"&&S.open){const ti=$("#gas-neu").value.trim();if(!ti){$("#gas-neu").focus();return}patch(S.open,d=>{d.teilziele=(d.teilziele||[]).concat({id:uid(),titel:ti,stufen:{},verlauf:[]})},{drawer:true,now:true})}
+  else if(a==="backup"){
+    const data=JSON.stringify({app:"br!nk Coaching Board",stand:new Date().toISOString(),klienten:[...S.docs.values()],journal:S.journal},null,2),fn="coaching-board-sicherung-"+todayISO()+".json";
+    (window.claude&&window.claude.use?window.claude.use("downloads"):Promise.resolve(null)).then(dl=>{
+      if(!dl){showText(data);return}
+      return dl.save({filename:fn,data}).then(()=>{setSave("Sicherung gespeichert");try{localStorage.setItem("cb-backup",todayISO())}catch(_){}renderPulse()},er=>{if(er&&er.code==="declined")setSave("Sicherung abgebrochen");else showText(data)});
+    }).catch(()=>showText(data));
+  }
   else if(a==="fb-msg"&&S.open){const d=S.docs.get(S.open);if(d)copyText(fbNachricht(d),"Nachricht")}
   else if(a==="fb-start"&&S.open){const d=S.docs.get(S.open);if(d)copyText(fbStartCode(d),"Startcode")}
   else if(a==="thema-add"&&S.open){const tx=$("#th-neu").value.trim();if(!tx){$("#th-neu").focus();return}patch(S.open,d=>{d.themen=(d.themen||[]).concat({id:uid(),text:tx,datum:todayISO(),erledigt:""})},{drawer:true,now:true});setTimeout(()=>{const n=$("#th-neu");n&&n.focus()},0)}
@@ -1431,7 +1443,7 @@ document.addEventListener("click",e=>{
     const v=id=>$(id).value.trim();
     const s={id:uid(),art:v("#s-art"),datum:v("#s-datum")||todayISO(),thema:v("#s-thema"),methode:v("#s-methode"),aha:v("#s-aha"),beitrag:v("#s-beitrag"),transfer:v("#s-transfer"),skala:v("#s-skala")===""?"":Math.max(0,Math.min(10,+v("#s-skala"))),faktoren:readFk("s-")};const sr=readSrs("s-");if(sr)s.srs=sr;
     if(s.art!=="Ausfall"&&!s.thema&&!s.aha&&!s.transfer&&s.skala===""){$("#s-thema").focus();setSave("Bitte mindestens ein Thema eintragen.",true);return}
-    addSession(S.open,s);
+    addSession(S.open,s,$("#s-next").value);
   }
 });
 document.addEventListener("input",e=>{
@@ -1462,7 +1474,7 @@ document.addEventListener("keydown",e=>{
 function openQuick(id){
   const d=S.docs.get(id);if(!d||!S.canWrite)return;
   S.quickId=id;$("#form-quick").reset();$("#q-talk").innerHTML=talkBox("q-");$("#q-tloop").innerHTML=transferBox(d);$("#q-extra").innerHTML=fkChips("q-")+srsInputs("q-");$("#q-who").textContent=(d.name||"Ohne Namen")+" · Sitzung "+(held(d).length+1)+(planOf(d)?" von "+planOf(d):"");
-  $("#q-datum").value=todayISO();$("#q-art").value=(d.wiederaufnahmen||[]).length?"Follow-up":"Sitzung";
+  $("#q-datum").value=todayISO();$("#q-next").value=fbTermin(d);$("#q-art").value=(d.wiederaufnahmen||[]).length?"Follow-up":"Sitzung";
   const dl=$("#dlg-quick");try{dl.showModal()}catch(_){dl.setAttribute("open","")}setTimeout(()=>$("#q-thema").focus(),0);
 }
 $("#q-cancel").addEventListener("click",()=>$("#dlg-quick").close());
@@ -1472,7 +1484,7 @@ $("#form-quick").addEventListener("submit",e=>{
   const v=x=>$(x).value.trim();
   const s={id:uid(),art:v("#q-art"),datum:v("#q-datum")||todayISO(),thema:v("#q-thema"),methode:"",aha:v("#q-aha"),beitrag:"",transfer:v("#q-transfer"),skala:v("#q-skala")===""?"":Math.max(0,Math.min(10,+v("#q-skala"))),faktoren:readFk("q-")};const sr=readSrs("q-");if(sr)s.srs=sr;
   if(s.art!=="Ausfall"&&!s.thema&&!s.aha&&s.skala===""){$("#q-thema").focus();return}
-  $("#dlg-quick").close();addSession(id,s);S.quickId=null;
+  const nx=$("#q-next").value;$("#dlg-quick").close();addSession(id,s,nx);S.quickId=null;
 });
 $("#q").addEventListener("input",e=>{S.q=e.target.value.trim();renderBoard()});
 $("#only-flags").addEventListener("change",e=>{S.onlyFlags=e.target.checked;renderBoard()});
