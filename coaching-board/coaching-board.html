@@ -368,12 +368,17 @@ pre.msg{font-family:var(--body);background:var(--card);border:1px solid var(--ru
 /* Dialoge */
 dialog{border-radius:var(--r-lg);background:var(--paper);box-shadow:0 30px 80px #1f24222a}
 .dlg h2{font:500 26px/1.1 var(--display);text-transform:none}
+/* Drei Spuren: Auftragsart als Marke auf der Karte, Filter im Lagebild */
+.tag.art-c{background:var(--red-soft);color:var(--red)}
+.tag.art-t{background:var(--warn-bg);color:var(--warn)}
+.tag.art-b{background:var(--ok-bg);color:var(--ok)}
+.tools .seg button{min-width:0}
 </style>
 
 <div class="wrap">
   <header class="top">
     <div class="brand">
-      <img class="brandimg" src="data:image/webp;base64,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" alt="br!nk fokusMensch" width="108"><div class="eyebrow">Sascha Brink · Coaching</div>
+      <img class="brandimg" src="data:image/webp;base64,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" alt="br!nk fokusMensch" width="108"><div class="eyebrow">Sascha Brink · Coaching, Training, Beratung</div>
       <h1>Coaching Board</h1>
       <div class="motto">Vom ersten Anruf bis zum Abschluss. Haltung vor Methode.</div>
     </div>
@@ -382,17 +387,18 @@ dialog{border-radius:var(--r-lg);background:var(--paper);box-shadow:0 30px 80px 
       <button class="btn ghost" data-act="journal" type="button">Journal</button>
       <button class="btn ghost" data-act="quartal" type="button">Quartal</button>
       <button class="btn ghost" data-act="backup" type="button" title="Alle Klienten und das Journal als Datei sichern">Sicherung</button>
-      <button class="btn red" id="btn-new" type="button">+ Neuer Klient</button>
+      <button class="btn red" id="btn-new" type="button">+ Neuer Auftrag</button>
     </div>
   </header>
 
   <section class="pulse" aria-label="Lagebild">
     <div class="stat"><span class="n" id="k-aktiv">0</span><span class="l">in Begleitung</span></div>
     <div class="stat"><span class="n" id="k-anfr">0</span><span class="l">in Anbahnung</span></div>
-    <div class="stat"><span class="n" id="k-sitz">0</span><span class="l" id="k-sitz-l">Sitzungen diesen Monat</span></div>
+    <div class="stat"><span class="n" id="k-sitz">0</span><span class="l" id="k-sitz-l">Termine diesen Monat</span></div>
     <div class="stat"><span class="n" id="k-offen">0 €</span><span class="l" id="k-offen-l">noch abzurechnen</span></div>
     <div class="stat alert"><span class="n" id="k-flag">0</span><span class="l">brauchen deine Aufmerksamkeit</span></div>
     <div class="tools">
+      <span class="seg" id="artf" role="group" aria-label="Auftragsart"><button type="button" class="on" data-artf="alle" aria-pressed="true">Alle</button><button type="button" data-artf="coaching" aria-pressed="false">Coaching</button><button type="button" data-artf="training" aria-pressed="false">Training</button><button type="button" data-artf="beratung" aria-pressed="false">Beratung</button></span>
       <input class="search" id="q" type="search" placeholder="Name, Firma, Thema suchen" aria-label="Klienten suchen">
       <label class="toggle"><input type="checkbox" id="only-flags"> Nur mit Handlungsbedarf</label>
     </div>
@@ -410,7 +416,8 @@ dialog{border-radius:var(--r-lg);background:var(--paper);box-shadow:0 30px 80px 
     <h2 id="dlg-new-h">Neuer Erstkontakt</h2>
     <p class="hint">Tipp für den Datenschutz: Vorname oder Kürzel reicht. Details gehören in deine Akte, nicht ins Board.</p>
     <div class="grid2">
-      <div class="fld"><label for="n-name">Name oder Kürzel</label><input id="n-name" required placeholder="z. B. Katrin M."></div>
+      <div class="fld"><label for="n-art">Art des Auftrags</label><select id="n-art"><option value="coaching">Coaching</option><option value="training">Training, Workshop, Lernformat</option><option value="beratung">Beratung, Moderation</option></select></div>
+      <div class="fld"><label for="n-name">Name, Gruppe oder Kürzel</label><input id="n-name" required placeholder="z. B. Katrin M. oder Filialleitungen Nord"></div>
       <div class="fld"><label for="n-rolle">Rolle</label><input id="n-rolle" placeholder="z. B. Teamleiterin Vertrieb"></div>
       <div class="fld"><label for="n-org">Organisation</label><input id="n-org" placeholder="Firma oder Branche"></div>
       <div class="fld"><label for="n-quelle">Wie kam der Kontakt?</label>
@@ -494,7 +501,7 @@ const NACHHOER=["Welches Ohr hatte ich offen: Sache, Beziehung, Selbstkundgabe o
 const IMPULSE=["Was habe ich beim Nachhören über mein eigenes Zuhören gelernt?","Welches Muster begegnet mir diese Woche zum zweiten Mal?","Bei wem habe ich gerade mehr Energie als der Klient selbst?","Wo habe ich zuletzt eine Methode benutzt, um einer Begegnung auszuweichen?","Welche Klientin erinnert mich an jemanden, und was macht das mit mir?"];
 
 /* ---------- Zustand ---------- */
-const S={sample:null,docs:new Map(),open:null,panel:null,tab:"ueberblick",q:"",onlyFlags:false,loaded:false,offline:false,stale:false,canWrite:true,confirmDel:false,confirmSess:null,confirmEx:false,confirmEnd:false,qOff:0,journal:[],quickId:null};
+const S={sample:null,docs:new Map(),open:null,panel:null,tab:"ueberblick",q:"",onlyFlags:false,loaded:false,offline:false,stale:false,canWrite:true,confirmDel:false,confirmSess:null,confirmEx:false,confirmEnd:false,qOff:0,journal:[],quickId:null,art:"alle"};
 let col=null,jcol=null;
 const dirty=new Set(),writing=new Set(),timers=new Map();
 const $=s=>document.querySelector(s);
@@ -510,6 +517,23 @@ const uid=()=>Math.random().toString(36).slice(2,10);
 const sessions=d=>(d.sitzungen||[]).slice().sort((a,b)=>(a.datum||"").localeCompare(b.datum||""));
 const vn=d=>{const n=(d.name||"").trim(),f=n.split(/\s+/)[0]||"";return !n?"die Person":(f.length<=2||f.endsWith("."))?n:f};
 const laufend=d=>d.form==="laufend";
+/* Drei Spuren. Einträge ohne Feld "art" sind Coaching, so bleibt der Bestand unverändert. */
+const ARTEN=[["coaching","Coaching","c"],["training","Training","t"],["beratung","Beratung","b"]];
+const artOf=d=>d&&ARTEN.some(a=>a[0]===d.art)?d.art:"coaching";
+const istC=d=>artOf(d)==="coaching";
+const artTag=d=>{const a=ARTEN.find(x=>x[0]===artOf(d));return `<span class="tag art-${a[2]}">${a[1]}</span>`};
+const BEGL=[["","Noch offen"],["keine","Keine Begleitung"],["raum","Raum: Protokoll, Material, Vereinbarungen"],["lernreise","Raum mit Lernreise und Impulsen"],["rueckmeldung","Raum mit persönlicher Rückmeldung"]];
+const PH_ORG={
+ 2:{checks:[["anlass","Anlass und Ziele mit dem Auftraggeber geklärt"],["beteiligte","Beteiligte und Entscheider benannt"],["format","Passendes Format geprüft: Workshop, Reihe, Moderation oder Coaching?"],["rahmen","Rahmen geklärt: Termine, Ort, Umfang, Honorar"],["angebot","Angebot verschickt"]],
+  fragen:["Wer will hier was von wem, und wer weiß davon?","Woran würde der Alltag in drei Monaten zeigen, dass es sich gelohnt hat?","Bin ich für das Anliegen gebucht oder für eine Lösung, die schon feststeht?"]},
+ 3:{checks:[["ziel","Ziele festgehalten und woran Fortschritt erkennbar ist"],["karussell","Auftragskarussell: Erwartungen von Auftraggeber, Führung und Teilnehmenden geklärt (Reiter Auftrag)"],["raumregel","Geklärt, was der Auftraggeber erfährt und was in der Gruppe bleibt"],["begleitung","Begleitung zwischen den Terminen angeboten und im Angebot ausgewiesen"],["vertrag","Auftrag bestätigt"]],
+  fragen:["Kommen die Teilnehmenden freiwillig, und was ändert das?","Was darf auf keinen Fall passieren?","Wem gehört, was in diesem Raum entsteht?"]},
+ 4:{checks:[["doku","Jeder Termin kurz dokumentiert"],["transfer","Vereinbarungen beim nächsten Termin aufgegriffen"],["impuls","Zwischen den Terminen einen Impuls gegeben"],["halbzeit","Zwischenbilanz gezogen"],["auftrag_ok","Auftrag noch stimmig? Bei Bedarf nachgeklärt"]],
+  fragen:["Arbeiten wir am vereinbarten Auftrag oder an dem, was sich darunter zeigt?","Wo laufe ich nach, statt einzuladen?","Was kann die Gruppe inzwischen ohne mich?"]},
+ 5:{checks:[["abgleich","Ziele mit dem Stand abgeglichen"],["mitnehmen","Ergebnisse und Vereinbarungen gesichert"],["ag_abschluss","Abschluss mit dem Auftraggeber geführt"],["feedback","Feedback eingeholt"],["rechnung","Rechnung gestellt"]],
+  fragen:["Was bleibt, wenn ich nicht mehr komme?","Was haben die Beteiligten selbst bewirkt, und wie machen wir das sichtbar?","Welche Vereinbarung braucht noch jemanden im Haus, der sie hält?"]}
+};
+const phFor=(d,p)=>{const b=PHASES[p-1],o=!istC(d)&&PH_ORG[p];return o?Object.assign({},b,o):b};
 const planOf=d=>laufend(d)?0:(+d.sitzungenPlan||0);
 function standortFaellig(d){if(!laufend(d)||phaseOf(d)!==4)return false;const st=(d.standorte||[]).map(x=>x.datum).sort().pop(),hs=held(d),ref=st||(hs[0]&&hs[0].datum)||(d.phaseSeit||{})[4];const k=daysFrom(ref);return k!==null&&k<=-90}
 const phaseOf=d=>Math.min(6,Math.max(1,+d.phase||1));
@@ -545,7 +569,7 @@ function lastUst(){const l=allInvoices().map(x=>x.r).filter(r=>r.ust!=null).sort
 function offen(d){
   const a=d.abrechnung||{},items=[];
   if(a.modell==="paket")(d.pakete||[]).forEach(k=>{if(!k.rechnung)items.push({kind:"paket",id:k.id,datum:k.gebucht,label:"Paket mit "+k.termine+" Terminen",betrag:+k.preis||0})});
-  else if(a.modell==="einzeln"){const satz=+a.satz||0,ausf=a.ausfall===""||a.ausfall==null?satz:+a.ausfall;let k=0;sessions(d).forEach(s=>{const aus=s.art==="Ausfall";if(!aus)k++;if(!s.rechnung&&(s.datum||"")<=todayISO())items.push({kind:"sitzung",id:s.id,datum:s.datum,label:aus?"Ausfallhonorar am "+fmtShort(s.datum):(s.art==="Follow-up"?"Follow-up":"Sitzung")+" S"+k+" am "+fmtShort(s.datum),betrag:aus?ausf:satz})})}
+  else if(a.modell==="einzeln"){const satz=+a.satz||0,ausf=a.ausfall===""||a.ausfall==null?satz:+a.ausfall;let k=0;sessions(d).forEach(s=>{const aus=s.art==="Ausfall";if(!aus)k++;if(!s.rechnung&&(s.datum||"")<=todayISO())items.push({kind:"sitzung",id:s.id,datum:s.datum,label:aus?"Ausfallhonorar am "+fmtShort(s.datum):(s.art==="Follow-up"?"Follow-up":istC(d)?"Sitzung":"Termin")+(istC(d)?" S":" T")+k+" am "+fmtShort(s.datum),betrag:aus?ausf:satz})})}
   const qs=quarterStart();
   return {items,sum:items.reduce((x,y)=>x+y.betrag,0),alt:items.some(x=>x.datum&&new Date(x.datum)<qs)};
 }
@@ -630,7 +654,7 @@ function renderPulse(){
   $("#k-anfr").textContent=all.filter(d=>[1,2].includes(phaseOf(d))).length;
   let n=0;all.forEach(d=>(d.sitzungen||[]).forEach(s=>{const t=new Date(s.datum);if(s.art!=="Ausfall"&&t.getMonth()===m&&t.getFullYear()===y)n++}));
   $("#k-sitz").textContent=n;
-  $("#k-sitz-l").textContent=(n===1?"Sitzung":"Sitzungen")+" im "+now.toLocaleDateString("de-DE",{month:"long"});
+  $("#k-sitz-l").textContent=(n===1?"Termin":"Termine")+" im "+now.toLocaleDateString("de-DE",{month:"long"});
   $("#k-flag").textContent=all.filter(d=>flags(d).some(f=>f.w)).length;
   $("#k-offen").textContent=eur(all.reduce((x,d)=>x+offen(d).sum,0));
   $("#k-offen-l").textContent="noch abzurechnen bis "+fmtShort(quarterEnd());
@@ -658,6 +682,7 @@ function renderWeek(){
 
 /* ---------- Board ---------- */
 function matches(d){
+  if(S.art!=="alle"&&artOf(d)!==S.art)return false;
   if(S.onlyFlags&&!flags(d).some(f=>f.w))return false;
   if(!S.q)return true;
   const h=[d.name,d.rolle,d.organisation,d.anliegen,d.ziel].join(" ").toLowerCase();
@@ -673,27 +698,27 @@ function card(d){
   if(p===6&&(d.phaseSeit||{})[6])meta+=`<span>Abgeschlossen ${esc(fmtShort(d.phaseSeit[6]))}${wa.length?` · ${wa.length}× Follow-up gebucht`:""}</span>`;
   const ah=held(d).length;
   if(p>=4&&p<=5&&plan){let pips="";for(let i=0;i<plan;i++)pips+=`<i class="${i<ah?"on":""}"></i>`;meta+=`<span><span class="pips" aria-hidden="true">${pips}</span> ${ah}/${plan}</span>`}
-  const ut=p>=4&&p<=5?umsetzung(d):null;if(ut)meta+=`<span class="tag ut-${ut}">Umsetzung: ${ut}</span>`;
+  const ut=istC(d)&&p>=4&&p<=5?umsetzung(d):null;if(ut)meta+=`<span class="tag ut-${ut}">Umsetzung: ${ut}</span>`;
   if(laufend(d)&&p===4){meta+=`<span>${ah} ${ah===1?"Sitzung":"Sitzungen"}</span>`;const ot=(d.themen||[]).filter(x=>!x.erledigt).length;if(ot)meta+=`<span>${ot} ${ot===1?"Thema":"Themen"} im Speicher</span>`}
   if(p===6&&d.ausgang&&d.ausgang!=="ziel")meta+=`<span>${esc(ausgangLabel(d.ausgang))}</span>`;
   if(p>=3&&last)meta+=`<span>Skala ${esc(last.skala)}/10</span>`;
   if(p===1&&d.quelle)meta+=`<span>${esc(d.quelle)}</span>`;
   const of=offen(d);if(of.items.length&&of.sum)meta+=`<span>Offen: ${esc(eur(of.sum))}</span>`;
   return `<div class="card${S.open===d.id?" sel":""}" data-open="${esc(d.id)}" draggable="${S.canWrite}" role="button" tabindex="0">
-    <span class="nm">${esc(d.name||"Ohne Namen")}${laufend(d)&&p<6?` <span class="tag">Laufend</span>`:""}${wa.length&&p<6?` <span class="tag">Follow-up</span>`:""}${d.beispiel?` <span class="tag">Beispiel</span>`:""}</span>
+    <span class="nm">${esc(d.name||"Ohne Namen")} ${artTag(d)}${laufend(d)&&p<6?` <span class="tag">Laufend</span>`:""}${wa.length&&p<6?` <span class="tag">Follow-up</span>`:""}${d.beispiel?` <span class="tag">Beispiel</span>`:""}</span>
     ${d.rolle||d.organisation?`<span class="ro">${esc([d.rolle,d.organisation].filter(Boolean).join(" · "))}</span>`:""}
     ${d.anliegen?`<span class="an">${esc(d.anliegen)}</span>`:""}
     ${fl.map(f=>`<span class="flag${f.w?"":" info"}">${esc(f.t)}</span>`).join("")}
     ${meta?`<span class="meta">${meta}</span>`:""}
-    ${S.canWrite&&p>=3&&p<=5?`<span class="card-acts"><button class="qn" type="button" data-prep="${esc(d.id)}">Vorbereiten</button><button class="qn" type="button" data-quick="${esc(d.id)}">+ Schnellnotiz</button></span>`:""}
+    ${S.canWrite&&istC(d)&&p>=3&&p<=5?`<span class="card-acts"><button class="qn" type="button" data-prep="${esc(d.id)}">Vorbereiten</button><button class="qn" type="button" data-quick="${esc(d.id)}">+ Schnellnotiz</button></span>`:""}
   </div>`;
 }
 function renderBoard(){
   const main=$("#main");
   if(S.offline){main.innerHTML=`<div class="state"><h2>Speicher nicht erreichbar</h2><p>In dieser Ansicht kann das Board deine Klienten nicht laden. Öffne es direkt auf claude.ai und melde dich an. Deine Daten liegen dort sicher und sind nur für dich sichtbar.</p></div>`;return}
-  if(!S.loaded){main.innerHTML=`<div class="state"><h2>Klienten werden geladen</h2><p>Gleich erscheinen hier deine Klienten, sortiert nach Phase. Neue Anfragen legst du oben über „Neuer Klient“ an.</p></div>`;return}
+  if(!S.loaded){main.innerHTML=`<div class="state"><h2>Klienten werden geladen</h2><p>Gleich erscheinen hier deine Klienten, sortiert nach Phase. Neue Anfragen legst du oben über „Neuer Auftrag“ an.</p></div>`;return}
   const all=[...S.docs.values()].filter(matches).sort((a,b)=>(a.naechsterTermin||"9").localeCompare(b.naechsterTermin||"9")||(b.aktualisiert||"").localeCompare(a.aktualisiert||""));
-  if(!S.docs.size){main.innerHTML=`<div class="state"><h2>Noch keine Klienten</h2><p>Sobald jemand anfragt, legst du ihn über „Neuer Klient“ an. Er startet in Phase 1 und wandert mit dir durch Erstgespräch, Auftrag und Prozess bis zum Nachklang.</p><button class="btn red" data-act="new" type="button">+ Ersten Klienten anlegen</button></div>`;return}
+  if(!S.docs.size){main.innerHTML=`<div class="state"><h2>Noch keine Klienten</h2><p>Sobald jemand anfragt, legst du ihn über „Neuer Auftrag“ an. Er startet in Phase 1 und wandert mit dir durch Erstgespräch, Auftrag und Prozess bis zum Nachklang.</p><button class="btn red" data-act="new" type="button">+ Ersten Klienten anlegen</button></div>`;return}
   const sl=main.querySelector(".board-scroll"),x=sl?sl.scrollLeft:0;
   main.innerHTML=`<div class="board-scroll"><div class="board">${PHASES.map(ph=>{
     const list=all.filter(d=>phaseOf(d)===ph.n);
@@ -717,7 +742,7 @@ function fld(id,label,field,val,type,ph,extra){
   return `<div class="fld"><label for="${id}">${label}</label><input id="${id}" type="${type||"text"}" data-f="${field}" value="${v}" placeholder="${esc(ph||"")}"${dis}${type==="number"?' min="0" max="40"':""}>${extra||""}</div>`;
 }
 function phaseBox(d){
-  const p=phaseOf(d),ph=PHASES[p-1],c=d.checks||{};
+  const p=phaseOf(d),ph=phFor(d,p),c=d.checks||{};
   return `<div class="phase-box">
     <span class="ph">Phase ${p} · ${ph.name}${laufend(d)&&p===4?" · laufende Begleitung":""}</span>
     <div class="checks">${ph.checks.filter(([k])=>!(laufend(d)&&k==="halbzeit")).map(([k,t])=>`<label class="chk${c[k]?" done":""}"><input type="checkbox" id="c-${k}" data-chk="${k}"${c[k]?" checked":""}${S.canWrite?"":" disabled"}><span>${esc(t)}</span></label>`).join("")}</div>
@@ -735,7 +760,7 @@ function phaseBox(d){
 function tabUeberblick(d){
   return `${phaseBox(d)}
   <div class="sec"><h3>Stärken</h3>
-    ${fld("f-staerken","Was "+esc(vn(d))+" schon kann","staerken",d.staerken,"area","Stärken, die sich zeigen. Sie gehören nach vorn, nicht ans Ende.")}
+    ${fld("f-staerken",istC(d)?"Was "+esc(vn(d))+" schon kann":"Was schon da ist","staerken",d.staerken,"area","Stärken, die sich zeigen. Sie gehören nach vorn, nicht ans Ende.")}
   </div>
   <div class="sec"><h3>Person & Kontext</h3><div class="grid2">
     ${fld("f-name","Name oder Kürzel","name",d.name)}
@@ -744,7 +769,8 @@ function tabUeberblick(d){
     ${fld("f-quelle","Wie kam der Kontakt?","quelle",d.quelle)}
     ${fld("f-kontakt","Erstkontakt am","kontaktDatum",d.kontaktDatum,"date")}
     ${fld("f-termin","Nächster Termin","naechsterTermin",d.naechsterTermin,"datetime-local")}
-    <div class="fld"><label for="f-form">Form der Zusammenarbeit</label><select id="f-form" data-f="form"${S.canWrite?"":" disabled"}><option value="prozess"${laufend(d)?"":" selected"}>Coaching mit Ziel und Abschluss</option><option value="laufend"${laufend(d)?" selected":""}>Laufende Begleitung ohne Enddatum</option></select></div>
+    <div class="fld"><label for="f-art">Art des Auftrags</label><select id="f-art" data-f="art"${S.canWrite?"":" disabled"}>${ARTEN.map(([k,l])=>`<option value="${k}"${artOf(d)===k?" selected":""}>${l}</option>`).join("")}</select></div>
+    ${istC(d)?`<div class="fld"><label for="f-form">Form der Zusammenarbeit</label><select id="f-form" data-f="form"${S.canWrite?"":" disabled"}><option value="prozess"${laufend(d)?"":" selected"}>Coaching mit Ziel und Abschluss</option><option value="laufend"${laufend(d)?" selected":""}>Laufende Begleitung ohne Enddatum</option></select></div>`:""}
     <div class="fld"><label for="f-anrede">Anrede in Nachrichten</label><select id="f-anrede" data-f="anredeForm"${S.canWrite?"":" disabled"}><option value="sie"${d.anredeForm!=="du"?" selected":""}>Sie</option><option value="du"${d.anredeForm==="du"?" selected":""}>Du</option></select></div>
   </div></div>
   <div class="sec"><h3>Anliegen & Auftrag</h3>
@@ -755,7 +781,7 @@ function tabUeberblick(d){
       ${fld("f-rhythmus","Rhythmus und Format","rhythmus",d.rhythmus,"text","z. B. alle 3 Wochen, 90 Min., Präsenz")}
     </div>
   </div>
-  <div class="sec"><h3>Mein fokusBuch</h3>
+  ${istC(d)?`<div class="sec"><h3>Mein fokusBuch</h3>
     <p class="hint">Das Workbook für ${esc(vn(d))}. Der Startcode enthält nur Vorname, Zielbild, Teilziele, ${laufend(d)?"den aktuellen Fokus, ":""}die letzte Vereinbarung und den nächsten Termin. Hypothesen, Motive, deine Resonanz und die Abrechnung bleiben im Board. Der Code ist verpackt, aber nicht verschlüsselt: Schick ihn über den Kanal, den ihr sonst auch nutzt.${d.anredeForm==="du"?"":" Das fokusBuch selbst spricht mit Du."}</p>
     <div class="phase-nav"><button class="btn small" data-act="fb-msg" type="button">Nachricht mit Link und Startcode kopieren</button><button class="btn small ghost" data-act="fb-start" type="button">Nur Startcode kopieren</button></div>
     <p class="hint">Nach jeder Sitzung findest du im Reiter Sitzungen „Code fürs fokusBuch“. Er bringt Aha-Satz und neue Vereinbarung ins Workbook.</p>
@@ -766,7 +792,7 @@ function tabUeberblick(d){
     ${S.canWrite?`<div class="phase-nav">${S.confirmSess==="verein"?`<span class="confirm">Deine Änderungen werden überschrieben. <button class="btn small red" data-act="verein-yes" type="button">Neu erstellen</button><button class="btn small ghost" data-sdel-no type="button">Abbrechen</button></span>`
       :`<button class="btn small" data-act="verein" type="button">${d.vereinbarung?"Entwurf neu erstellen":"Entwurf erstellen"}</button>${d.vereinbarung?`<button class="btn small ghost" data-act="verein-copy" type="button">Text kopieren</button>`:""}`}</div>`:""}
     ${d.vereinbarung?`<div class="fld"><label for="f-verein">Vereinbarung (frei bearbeitbar)</label><textarea id="f-verein" class="brief" data-f="vereinbarung"${S.canWrite?"":" disabled"}>${esc(d.vereinbarung)}</textarea></div>`:""}
-  </div>`;
+  </div>`:""}`;
 }
 /* ---------- Grafiken nach „90 Tage dranbleiben“ ---------- */
 const TSCORE={ja:3,teil:1.5,nein:0};
@@ -953,7 +979,7 @@ function fkView(d){
 function karussellBlock(d){
   const k=d.karussell||[],dis=S.canWrite?"":" disabled";
   return `<div class="sec"><h3>Auftragskarussell</h3>
-    <p class="hint">Nach Arist von Schlippe: Wer hat welche Erwartung an dieses Coaching? Widersprüchliche Erwartungen sind der häufigste stille Grund, warum Prozesse stocken.</p>
+    <p class="hint">Nach Arist von Schlippe: Wer hat welche Erwartung an diese Zusammenarbeit? Widersprüchliche Erwartungen sind der häufigste stille Grund, warum Prozesse stocken.</p>
     ${k.map(x=>`<div class="kar"><div class="grid2">
       <div class="fld"><label for="kw-${esc(x.id)}">Wer</label><input id="kw-${esc(x.id)}" list="kar-wer" data-kar="${esc(x.id)}" data-kf="wer" value="${esc(x.wer)}"${dis}></div>
       <div class="fld"><label for="ke-${esc(x.id)}">Erwartet</label><input id="ke-${esc(x.id)}" data-kar="${esc(x.id)}" data-kf="erwartung" value="${esc(x.erwartung)}"${dis}></div>
@@ -1094,7 +1120,7 @@ function tabDreieck(d){
       <div class="s-foot">${S.canWrite?(S.confirmSess==="ag:"+t.id?`<span class="confirm">Löschen? <button class="btn small red" data-agdel-yes="${esc(t.id)}" type="button">Ja</button><button class="btn small ghost" data-sdel-no type="button">Nein</button></span>`:`<button class="linkish" data-agdel="${esc(t.id)}" type="button">Löschen</button>`):""}</div>
     </div></div>`}).join("");
   return `${karussellBlock(d)}<div class="sec"><h3>Dreieckskontrakt</h3>
-    <p class="hint">Für Coachings, die eine Organisation bezahlt. Termine mit dem Auftraggeber finden auch ohne den Klienten statt. Er sollte vorher wissen, dass es sie gibt und worüber gesprochen wird.</p>
+    <p class="hint">${istC(d)?"Für Coachings, die eine Organisation bezahlt. Termine mit dem Auftraggeber finden auch ohne den Klienten statt. Er sollte vorher wissen, dass es sie gibt und worüber gesprochen wird.":"Wer beauftragt, wer nimmt teil, und wer erfährt was? Kläre es, bevor der erste Termin stattfindet."}</p>
     <div class="grid2">
       ${fld("f-auftraggeber","Auftraggeber","auftraggeber",d.auftraggeber,"text","z. B. HR-Leitung, oder: zahlt selbst")}
       ${fld("f-agkontakt","Ansprechperson","agKontakt",d.agKontakt,"text","Name und Funktion")}
@@ -1112,11 +1138,11 @@ function tabDreieck(d){
     <div><button class="btn" data-act="add-ag" type="button">Termin speichern</button></div></div>`:""}
     <div class="sess">${items||`<p class="hint">Noch kein Termin mit dem Auftraggeber.</p>`}</div>
   </div>
-  <div class="sec"><h3>Leitfragen für das Dreieck</h3><ul class="qs">
+  ${istC(d)?`<div class="sec"><h3>Leitfragen für das Dreieck</h3><ul class="qs">
     <li>Weiß der Klient, dass dieses Gespräch stattfindet und worum es geht?</li>
     <li>Was darf ich sagen, und was bleibt im Coaching?</li>
     <li>Passt die Erwartung der Organisation noch zum Ziel des Klienten?</li>
-    <li>Kann der Klient in der Zwischenbilanz selbst berichten, mit mir als Moderator?</li></ul></div>`;
+    <li>Kann der Klient in der Zwischenbilanz selbst berichten, mit mir als Moderator?</li></ul></div>`:`<div class="sec"><h3>Leitfragen für den Auftrag</h3><ul class="qs"><li>Wissen die Teilnehmenden, was der Auftraggeber erwartet und was er erfährt?</li><li>Passt die Erwartung der Organisation zu dem, was die Beteiligten selbst wollen?</li><li>Wem gehört, was in diesem Raum entsteht?</li></ul></div>`}`;
 }
 function tabAbrechnung(d){
   const a=d.abrechnung||{},o=offen(d),qe=quarterEnd(),dis=S.canWrite?"":" disabled";
@@ -1169,6 +1195,53 @@ function tabAbrechnung(d){
     <div class="sess">${rech||`<p class="hint">Noch keine Rechnung.</p>`}</div></div>`;
 }
 const TABS=[["ueberblick","Überblick",tabUeberblick],["vorbereitung","Vorbereitung",tabVorbereitung],["sitzungen","Sitzungen",tabSitzungen],["dreieck","Auftrag",tabDreieck],["abrechnung","Abrechnung",tabAbrechnung],["entwicklung","Entwicklung",tabEntwicklung],["motive","Motive",tabMotive],["reflexion","Reflexion",tabReflexion]];
+/* Akte für Training und Beratung: gleicher Kern (Überblick, Auftrag, Abrechnung, Reflexion), eigene Reiter für Termine und Raum. */
+function tabsFor(d){const a=artOf(d);if(a==="coaching")return TABS;
+  return [TABS[0],["sitzungen","Termine",tabTermine],TABS[3],["raum",a==="training"?"Gruppe & Transfer":"Beteiligte & Ergebnisse",tabRaum],TABS[4],TABS[7]]}
+function tabTermine(d){
+  const ss=sessions(d),plan=planOf(d);let k=0;const num=new Map();ss.forEach(s=>{if(s.art!=="Ausfall")num.set(s.id,++k)});
+  const items=ss.slice().reverse().map(s=>{const aus=s.art==="Ausfall";return `<div class="s-item">
+    <span class="s-no">${aus?"–":"T"+num.get(s.id)}</span><span class="s-date">${esc(fmtShort(s.datum))}</span>
+    <div class="s-main"><span class="th">${esc(aus?"Ausfall"+(s.thema?": "+s.thema:""):(s.thema||"Ohne Titel"))}</span>
+      ${s.aha?`<p><span class="lbl">Entstanden:</span> ${esc(s.aha)}</p>`:""}
+      ${s.transfer?`<p><span class="lbl">Vereinbart:</span> ${esc(s.transfer)}</p>`:""}
+      <div class="s-foot">${s.rechnung?`<span class="tag">abgerechnet</span>`:""}${S.canWrite?(S.confirmSess===s.id?`<span class="confirm">Löschen? <button class="btn small red" data-sdel-yes="${esc(s.id)}" type="button">Ja</button><button class="btn small ghost" data-sdel-no type="button">Nein</button></span>`:`<button class="linkish" data-sdel="${esc(s.id)}" type="button">Löschen</button>`):""}</div>
+    </div></div>`}).join("");
+  return `<div class="sec"><h3>Termine ${plan?`· ${k} von ${plan}`:`· ${k}`}</h3>
+    ${S.canWrite?`<div class="addbox"><div class="grid2">
+        <div class="fld"><label for="tm-datum">Datum</label><input id="tm-datum" type="date" value="${todayISO()}"></div>
+        <div class="fld"><label for="tm-next">Nächster Termin</label><input id="tm-next" type="datetime-local" value="${esc(fbTermin(d))}"></div>
+        <div class="fld"><label for="tm-art">Art</label><select id="tm-art"><option value="Sitzung">Termin</option><option>Ausfall</option></select></div>
+      </div>
+      <div class="fld"><label for="tm-thema">Titel</label><input id="tm-thema" placeholder="z. B. Modul 2: Delegieren, oder: Klausur Tag 1"></div>
+      <div class="fld"><label for="tm-aha">Was ist heute entstanden?</label><textarea id="tm-aha" placeholder="Ergebnisse und Sätze, die hängen geblieben sind"></textarea></div>
+      <div class="fld"><label for="tm-transfer">Vereinbarungen bis zum nächsten Mal</label><textarea id="tm-transfer" placeholder="Verbindlich, weil der nächste Termin damit beginnt"></textarea></div>
+      <div><button class="btn" data-act="add-termin" type="button">Termin speichern</button></div></div>`:""}
+    <div class="sess">${items||`<p class="hint">Noch kein Termin dokumentiert.</p>`}</div></div>`;
+}
+function tabRaum(d){
+  const tr=artOf(d)==="training",dis=S.canWrite?"":" disabled",b=d.begleitung||"";
+  const fr=tr?["Was ist hier Angebot, was ist Vereinbarung?","Wo laufe ich nach, statt einzuladen?","Was gibt die Gruppe selbst an den Auftraggeber weiter?"]
+             :["Wer fehlt am Tisch, obwohl es um ihn geht?","Welche Vereinbarung trägt, auch wenn ich nicht dabei bin?","Was wird hier nicht gesagt, und wer weiß es trotzdem?"];
+  return `<p class="privacy">${tr?"Der Raum gehört den Teilnehmenden. Hier steht, was du für deine Arbeit brauchst, nichts über Einzelne.":"Hier steht, was vereinbart ist und wer was übernimmt. Vertrauliches aus Einzelgesprächen gehört in eine eigene Coaching-Akte."}</p>
+  <div class="sec"><h3>${tr?"Gruppe":"Beteiligte"}</h3>
+    ${tr?fld("f-gruppe","Wer ist dabei?","gruppe",d.gruppe,"area","Anzahl, Ebene, kommen sie freiwillig? Rollen statt Namen.")
+        :fld("f-beteiligte","Wer ist beteiligt, wer entscheidet?","beteiligte",d.beteiligte,"area","Rollen statt Namen: Wer beauftragt, wer arbeitet mit, wer entscheidet am Ende?")}
+    ${fld("f-fortschritt","Woran erkennen wir Fortschritt?","fortschritt",d.fortschritt,"area","Was soll im Alltag zu beobachten sein? z. B. offeneres Feedback, klarere Übergaben")}
+  </div>
+  ${tr?`<div class="sec"><h3>Zwischen den Terminen</h3>
+    <div class="fld"><label for="f-begleitung">Begleitung im Angebot</label><select id="f-begleitung" data-f="begleitung"${dis}>${BEGL.map(([k,l])=>`<option value="${k}"${b===k?" selected":""}>${l}</option>`).join("")}</select></div>
+    ${fld("f-angebote","Angebote, freiwillig","angebote",d.angebote,"area","Audio von dir, Podcast, Video, Etappe einer Lernreise. Ohne Zähler, ohne Erinnerung.")}
+    ${fld("f-vergruppe","Vereinbarungen, verbindlich","vereinbarungenGruppe",d.vereinbarungenGruppe,"area","Was bearbeiten alle bis zum nächsten Termin? Der Termin beginnt damit.")}
+    ${fld("f-freigabe","Was die Gruppe für den Auftraggeber freigibt","freigabe",d.freigabe,"area","Nur was die Gruppe selbst formuliert hat, z. B. eine Botschaft an die Führung.")}
+    ${fld("f-gaeste","Gäste im Raum","gaeste",d.gaeste,"area","Du lädst nach Rücksprache mit der Gruppe ein: wen, wozu, für welchen Moment?")}
+  </div>`:`<div class="sec"><h3>Verlauf</h3>
+    ${fld("f-meilensteine","Meilensteine und nächster Schritt","meilensteine",d.meilensteine,"area")}
+    ${fld("f-ergebnisse","Ergebnisse und Vereinbarungen","ergebnisse",d.ergebnisse,"area","Was ist entschieden, wer übernimmt was bis wann?")}
+    ${fld("f-offenep","Offene Punkte","offenePunkte",d.offenePunkte,"area")}
+  </div>`}
+  <div class="sec"><h3>Leitfragen für dich</h3><ul class="qs">${fr.map(q=>`<li>${esc(q)}</li>`).join("")}</ul></div>`;
+}
 function panelShell(title,body){
   return `<div class="scrim" data-act="close"></div>
   <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="d-h">
@@ -1221,14 +1294,14 @@ function renderDrawer(){
   const d=S.open&&S.docs.get(S.open);
   if(!d){root.innerHTML="";return}
   const body=root.querySelector(".d-body"),sc=body?body.scrollTop:0,p=phaseOf(d),seit=d.phaseSeit||{};
-  const tab=TABS.find(t=>t[0]===S.tab)||TABS[0];
+  const tabs=tabsFor(d),tab=tabs.find(t=>t[0]===S.tab)||tabs[0];
   root.innerHTML=`<div class="scrim" data-act="close"></div>
   <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="d-h">
     <div class="d-head">
-      <div class="d-title"><div><h2 id="d-h">${esc(d.name||"Ohne Namen")}</h2><div class="ro">${esc([d.rolle,d.organisation].filter(Boolean).join(" · ")||"Rolle und Organisation noch offen")}${d.beispiel?` · <span class="tag">Beispiel</span>`:""}</div></div>
+      <div class="d-title"><div><h2 id="d-h">${esc(d.name||"Ohne Namen")}</h2><div class="ro">${artTag(d)} ${esc([d.rolle,d.organisation].filter(Boolean).join(" · ")||"Rolle und Organisation noch offen")}${d.beispiel?` · <span class="tag">Beispiel</span>`:""}</div></div>
         <button class="x" data-act="close" type="button" aria-label="Akte schließen">×</button></div>
       <div class="steps" role="group" aria-label="Phase wählen">${PHASES.map(ph=>`<button type="button" class="step${ph.n===p?" cur":ph.n<p?" done":""}" data-phase="${ph.n}" title="${ph.name}${seit[ph.n]?" seit "+fmtShort(seit[ph.n]):""}" aria-current="${ph.n===p?"step":"false"}"${S.canWrite?"":" disabled"}><b>${ph.n}</b><span>${ph.name}</span></button>`).join("")}</div>
-      <div class="tabs" role="tablist">${TABS.map(([k,l])=>`<button class="tab${k===tab[0]?" on":""}" role="tab" aria-selected="${k===tab[0]}" data-tab="${k}" type="button">${l}</button>`).join("")}</div>
+      <div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button class="tab${k===tab[0]?" on":""}" role="tab" aria-selected="${k===tab[0]}" data-tab="${k}" type="button">${l}</button>`).join("")}</div>
     </div>
     <div class="d-body">${tab[2](d)}</div>
     <div class="d-foot"><span>${d.aktualisiert?"Zuletzt bearbeitet "+esc(fmtDT(d.aktualisiert.slice(0,16))):""}</span>
@@ -1341,7 +1414,7 @@ function briefEntwurf(d,du){
 function akteText(d){
   const L=[],add=(k,v)=>{if(v!=null&&String(v).trim()!=="")L.push(k+": "+v)};
   L.push("Akte "+(d.name||"")+" · Stand "+fmtShort(todayISO()),"");
-  add("Rolle",d.rolle);add("Organisation",d.organisation);add("Phase",PHASES[phaseOf(d)-1].name);if(phaseOf(d)===6)add("Ausgang",ausgangLabel(d.ausgang));
+  add("Art",ARTEN.find(a=>a[0]===artOf(d))[1]);add("Rolle",d.rolle);add("Organisation",d.organisation);add("Phase",PHASES[phaseOf(d)-1].name);if(phaseOf(d)===6)add("Ausgang",ausgangLabel(d.ausgang));
   add("Erstkontakt",d.kontaktDatum&&fmtShort(d.kontaktDatum));add("Anliegen",d.anliegen);add("Zielbild",d.ziel);add("Stärken",d.staerken);
   add("Auftraggeber",d.auftraggeber);add("Vertraulichkeitsabrede",d.vertraulichkeit);
   const ss=sessions(d);if(ss.length){L.push("","Termine:");ss.forEach(s=>L.push("- "+fmtShort(s.datum)+" ("+(s.art||"Sitzung")+")"+(s.thema?": "+s.thema:"")+(s.methode?" · "+s.methode:"")+(s.aha?" · Aha: "+s.aha:"")+(s.beitrag?" · Eigener Beitrag: "+s.beitrag:"")+(s.nachhoeren?" · Beim Nachhören: "+s.nachhoeren:"")+(s.transfer?" · Vereinbarung: "+s.transfer:"")+(s.skala!==""&&s.skala!=null?" · Skala "+s.skala:"")))}
@@ -1351,6 +1424,7 @@ function akteText(d){
   const kr=(d.karussell||[]).filter(k=>k.wer||k.erwartung);if(kr.length){L.push("","Auftragskarussell:");kr.forEach(k=>L.push("- "+(k.wer||"?")+": "+[k.erwartung,k.weiss?"weiß: "+k.weiss:"",k.haltung?"meine Haltung: "+k.haltung:""].filter(Boolean).join(" · ")))}
   const so=d.standorte||[];if(so.length){L.push("","Standortbestimmungen:");so.forEach(x=>L.push("- "+fmtShort(x.datum)+": "+[x.bewegt,x.fokus?"Fokus: "+x.fokus:""].filter(Boolean).join(" · ")))}
   const th=(d.themen||[]).filter(x=>!x.erledigt);if(th.length){L.push("","Themenspeicher:");th.forEach(x=>L.push("- "+x.text))}
+  [["Gruppe","gruppe"],["Beteiligte","beteiligte"],["Fortschritt erkennbar an","fortschritt"],["Angebote","angebote"],["Vereinbarungen der Gruppe","vereinbarungenGruppe"],["Freigabe an den Auftraggeber","freigabe"],["Gäste","gaeste"],["Meilensteine","meilensteine"],["Ergebnisse","ergebnisse"],["Offene Punkte","offenePunkte"]].forEach(([l,k])=>add(l,d[k]));
   L.push("","Notizen des Coachs:");add("Hypothesen",d.hypothesen);add("Innere Bühne",d.innenleben);add("Resonanz",d.resonanz);add("Notizen",d.notizen);
   add("Bilanz",d.bilanz);
   if((d.rechnungen||[]).length){L.push("","Rechnungen:");d.rechnungen.forEach(r=>L.push("- "+(r.nummer||"ohne Nummer")+" vom "+fmtShort(r.datum)+", "+eur(brutto(r))+(r.bezahlt?", bezahlt":"")))}
@@ -1462,7 +1536,7 @@ document.addEventListener("click",e=>{
   else if(a==="anon-yes"&&S.open){
     S.confirmDel=false;
     patch(S.open,d=>{
-      ["rolle","organisation","quelle","anliegen","ziel","auftraggeber","agKontakt","agErwartung","vertraulichkeit","rhythmus","staerken","bilanz","hypothesen","innenleben","resonanz","notizen","reissNotiz","abschlussbrief","ausgangNotiz","rechnungAn","naechsterTermin","vereinbarung","frageHeute","absageRegel","vorbKlient"].forEach(k=>{if(k in d)d[k]=""});
+      ["rolle","organisation","quelle","anliegen","ziel","auftraggeber","agKontakt","agErwartung","vertraulichkeit","rhythmus","staerken","bilanz","hypothesen","innenleben","resonanz","notizen","reissNotiz","abschlussbrief","ausgangNotiz","rechnungAn","naechsterTermin","vereinbarung","frageHeute","absageRegel","vorbKlient","gruppe","beteiligte","fortschritt","angebote","vereinbarungenGruppe","freigabe","gaeste","meilensteine","ergebnisse","offenePunkte"].forEach(k=>{if(k in d)d[k]=""});
       d.name="Anonym "+d.id.slice(0,4).toUpperCase();d.reiss={};
       (d.sitzungen||[]).forEach(s=>{s.thema="";s.aha="";s.transfer="";s.beitrag="";s.nachhoeren="";s.transferNotiz=""});(d.teilziele||[]).forEach(g=>{g.titel="Teilziel";g.stufen={}});(d.karussell||[]).forEach(k=>{k.erwartung="";k.weiss="";k.haltung=""});d.themen=[];(d.standorte||[]).forEach(x=>{x.bewegt="";x.fokus=""});
       (d.agTermine||[]).forEach(x=>{x.ergebnis=""});
@@ -1508,9 +1582,15 @@ document.addEventListener("click",e=>{
       d.wiederaufnahmen=(d.wiederaufnahmen||[]).concat({datum:t0,anzahl:n});
       d.sitzungenPlan=Math.max(+d.sitzungenPlan||0,held(d).length)+n;
       d.phase=4;d.phaseSeit=Object.assign({},d.phaseSeit);delete d.phaseSeit[5];delete d.phaseSeit[6];d.phaseSeit[4]=t0;
-      d.checks=Object.assign({},d.checks);PHASES[4].checks.forEach(([k])=>delete d.checks[k]);
+      d.checks=Object.assign({},d.checks);phFor(d,5).checks.forEach(([k])=>delete d.checks[k]);
       if((d.abrechnung||{}).modell==="paket")d.pakete=(d.pakete||[]).concat({id:uid(),termine:n,preis:"",gebucht:t0,rechnung:null});
     },{drawer:true,now:true});
+  }
+  else if(a==="add-termin"&&S.open){
+    const v=id=>$(id).value.trim();
+    const s={id:uid(),art:v("#tm-art"),datum:v("#tm-datum")||todayISO(),thema:v("#tm-thema"),methode:"",aha:v("#tm-aha"),beitrag:"",transfer:v("#tm-transfer"),skala:"",faktoren:[]};
+    if(s.art!=="Ausfall"&&!s.thema&&!s.aha&&!s.transfer){$("#tm-thema").focus();setSave("Bitte mindestens einen Titel eintragen.",true);return}
+    addSession(S.open,s,$("#tm-next").value);
   }
   else if(a==="add-sess"&&S.open){
     const v=id=>$(id).value.trim();
@@ -1536,7 +1616,7 @@ document.addEventListener("change",e=>{
   if(t.dataset.sgel&&S.open){const sid=t.dataset.sgel,v=t.checked;t.closest("label").classList.toggle("done",v);patch(S.open,d=>{const s=(d.sitzungen||[]).find(x=>x.id===sid);if(s)s.aufnahmeGeloescht=v});return}
   if(t.dataset.chk&&S.open){const k=t.dataset.chk;patch(S.open,d=>{d.checks=d.checks||{};d.checks[k]=t.checked},{drawer:true});return}
   if((t.dataset.af||t.dataset.ppreis)&&S.open){renderDrawer();return}
-  if(t.dataset.f&&S.open){flush(S.open);if(t.dataset.f==="ausgang"||t.dataset.f==="form"){renderDrawer();return}const h=document.getElementById("d-h"),d=S.docs.get(S.open);if(h&&d&&t.dataset.f==="name")h.textContent=d.name||"Ohne Namen"}
+  if(t.dataset.f&&S.open){flush(S.open);if(t.dataset.f==="ausgang"||t.dataset.f==="form"||t.dataset.f==="art"){renderDrawer();return}const h=document.getElementById("d-h"),d=S.docs.get(S.open);if(h&&d&&t.dataset.f==="name")h.textContent=d.name||"Ohne Namen"}
 });
 document.addEventListener("keydown",e=>{
   if(e.key==="Escape"&&(S.open||S.panel)&&!document.querySelector("dialog[open]"))closeDrawer();
@@ -1561,6 +1641,7 @@ $("#form-quick").addEventListener("submit",e=>{
 });
 $("#q").addEventListener("input",e=>{S.q=e.target.value.trim();renderBoard()});
 $("#only-flags").addEventListener("change",e=>{S.onlyFlags=e.target.checked;renderBoard()});
+$("#artf").addEventListener("click",e=>{const b=e.target.closest("[data-artf]");if(!b)return;S.art=b.dataset.artf;$("#artf").querySelectorAll("button").forEach(x=>{const on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-pressed",on)});renderBoard()});
 
 /* Drag & Drop zwischen Phasen */
 let dragId=null;
@@ -1580,7 +1661,7 @@ $("#form-new").addEventListener("submit",e=>{
   e.preventDefault();
   const name=$("#n-name").value.trim();if(!name){$("#n-name").focus();return}
   const id=col.doc().id,t=todayISO();
-  S.docs.set(id,{id,name,rolle:$("#n-rolle").value.trim(),organisation:$("#n-org").value.trim(),quelle:$("#n-quelle").value,form:$("#n-form").value,anliegen:$("#n-anliegen").value.trim(),
+  S.docs.set(id,{id,name,rolle:$("#n-rolle").value.trim(),organisation:$("#n-org").value.trim(),quelle:$("#n-quelle").value,art:$("#n-art").value,form:$("#n-form").value,anliegen:$("#n-anliegen").value.trim(),
     phase:1,phaseSeit:{1:t},kontaktDatum:t,checks:{anfrage:true},sitzungen:[],reiss:{},erstellt:new Date().toISOString(),aktualisiert:new Date().toISOString()});
   dirty.add(id);schedule(id,0);$("#dlg-new").close();renderAll();openDrawer(id);
 });
@@ -1617,3 +1698,4 @@ renderAll();
 })();
 })();
 </script>
+
