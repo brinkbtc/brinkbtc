@@ -178,6 +178,7 @@ document.addEventListener("visibilitychange",function(){if(document.visibilitySt
 
 var UI={view:"start",week:null,draft:null,steer:null,confirm:null,openCode:false};
 var EMBED=false;
+var FRAMED=(function(){try{return window.self!==window.top}catch(e){return true}})();
 
 /* ---------- Helfer ---------- */
 function $(s){return document.querySelector(s)}
@@ -468,7 +469,7 @@ function vCoach(){
    '<section class="sec"><h2>Verschicken</h2><div class="card">'+
      '<p class="hint">Speichert das Team auf diesem Gerät und erzeugt die Einladung mit Startcode. Mail an das Team, fertig.</p><div class="row"><button class="btn" data-act="copy-invite">Einladung kopieren</button><button class="btn two" data-act="copy-start">Nur Startcode kopieren</button></div>'+
      '<p class="msg" id="m-inv" role="status"></p><textarea class="code" id="o-inv" readonly hidden aria-label="Einladung"></textarea>'+
-     '<hr style="border:0;border-top:1px solid var(--rule);width:100%"><p class="hint"><b>Oder als eigene Datei:</b> Eine HTML-Datei nur für dieses Team, die sich ohne Startcode direkt richtig öffnet. Funktioniert, wenn du die App lokal oder von deiner Website aus nutzt, nicht in jeder Vorschau.</p><div class="row"><button class="btn two" data-act="download">Kundendatei herunterladen</button></div><p class="msg" id="m-dl" role="status"></p>'+
+     (FRAMED?'<p class="hint">Eine eigene Kundendatei kannst du erzeugen, wenn du die App direkt im Browser oder von deiner Website aus öffnest. In dieser Ansicht sind Downloads gesperrt.</p>':'<hr style="border:0;border-top:1px solid var(--rule);width:100%"><p class="hint"><b>Oder als eigene Datei:</b> Eine HTML-Datei nur für dieses Team, die sich ohne Startcode direkt richtig öffnet. Funktioniert, wenn du die App lokal oder von deiner Website aus nutzt, nicht in jeder Vorschau.</p><div class="row"><button class="btn two" data-act="download">Kundendatei herunterladen</button></div><p class="msg" id="m-dl" role="status"></p>')+
    '</div></section>'+
    '<section class="sec"><div class="row"><button class="btn two" data-act="draft-close">Zurück zur Übersicht</button>'+(DB.teams[d.id]?'<button class="btn two" data-act="open" data-id="'+esc(d.id)+'">Team-Ansicht öffnen</button>':'')+'</div></section>';
 }
