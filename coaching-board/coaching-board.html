@@ -11,6 +11,7 @@
   --red:#b50000; --red-hover:#85000d; --red-soft:#f8eeee; --on-red:#ffffff;
   --warn:#8a5300; --warn-bg:#f6ecdc; --ok:#2f6b4a; --ok-bg:#e8efe9;
   --scrim:rgba(36,38,41,.32);
+  --s0:#e2ddd3; --s1:#e7b3a8; --s2:#c96a5c; --s3:#b50000;
   --display:"Playfair Display",Georgia,"Times New Roman",serif;
   --body:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Inter,Roboto,Arial,sans-serif;
   --r:12px; --r-lg:20px;
@@ -191,6 +192,30 @@ pre.msg{white-space:pre-wrap;font:15px/1.5 var(--body);background:var(--wash);pa
 .plist li{font-size:15px;line-height:1.45}
 .plist .lbl{font-weight:600;color:var(--ink-2)}
 .card-acts{display:flex;flex-wrap:wrap;gap:6px}
+/* Grafiken nach „90 Tage dranbleiben“ */
+.day{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.day b{font:500 44px/1 var(--display);color:var(--red);letter-spacing:-.025em;font-variant-numeric:lining-nums}
+.day span{color:var(--ink-2);font-size:15px}
+.track{position:relative;height:10px;background:var(--wash);border-radius:6px;margin:22px 6px 30px}
+.track .fill{position:absolute;left:0;top:0;bottom:0;background:var(--red);border-radius:6px}
+.track .mk{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:var(--card);border:2px solid var(--ink-2);transform:translate(-50%,-50%)}
+.track .mk.past{background:var(--ink-2)}
+.track .mk.goal{width:16px;height:16px;border-color:var(--red)}
+.track .mkl{position:absolute;top:16px;font-size:12px;color:var(--mute);transform:translateX(-50%);white-space:nowrap}
+.track .mkt{position:absolute;bottom:16px;font:700 11px/1 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--mute);transform:translateX(-50%);white-space:nowrap}
+.spark{display:block;width:100%;height:auto;max-width:420px}
+.spark .bg{fill:var(--wash)}
+.spark .now{fill:none;stroke:var(--ink-2);stroke-width:1.5;stroke-dasharray:3 3}
+.spark .b0{fill:var(--s0)}.spark .b1{fill:var(--s1)}.spark .b2{fill:var(--s2)}.spark .b3{fill:var(--s3)}
+.spark .miss{fill:none;stroke:var(--line-2);stroke-width:1.5}
+.spark .zl{stroke:var(--ink-2);stroke-width:1;stroke-dasharray:4 3}
+.spark text{font:600 10px var(--body);fill:var(--mute)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--mute)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.tag.ut-sitzt{background:var(--ok-bg);color:var(--ok)}
+.tag.ut-wird{background:var(--ok-bg);color:var(--ok)}
+.tag.ut-wackelt{background:var(--warn-bg);color:var(--warn)}
+.tag.ut-hakt{background:var(--red-soft);color:var(--red)}
 
 .sess{display:flex;flex-direction:column;gap:10px}
 .s-item{border-top:1px solid var(--rule);padding-top:12px;display:grid;grid-template-columns:64px 1fr;gap:4px 14px}
@@ -648,6 +673,7 @@ function card(d){
   if(p===6&&(d.phaseSeit||{})[6])meta+=`<span>Abgeschlossen ${esc(fmtShort(d.phaseSeit[6]))}${wa.length?` · ${wa.length}× Follow-up gebucht`:""}</span>`;
   const ah=held(d).length;
   if(p>=4&&p<=5&&plan){let pips="";for(let i=0;i<plan;i++)pips+=`<i class="${i<ah?"on":""}"></i>`;meta+=`<span><span class="pips" aria-hidden="true">${pips}</span> ${ah}/${plan}</span>`}
+  const ut=p>=4&&p<=5?umsetzung(d):null;if(ut)meta+=`<span class="tag ut-${ut}">Umsetzung: ${ut}</span>`;
   if(laufend(d)&&p===4){meta+=`<span>${ah} ${ah===1?"Sitzung":"Sitzungen"}</span>`;const ot=(d.themen||[]).filter(x=>!x.erledigt).length;if(ot)meta+=`<span>${ot} ${ot===1?"Thema":"Themen"} im Speicher</span>`}
   if(p===6&&d.ausgang&&d.ausgang!=="ziel")meta+=`<span>${esc(ausgangLabel(d.ausgang))}</span>`;
   if(p>=3&&last)meta+=`<span>Skala ${esc(last.skala)}/10</span>`;
@@ -742,6 +768,51 @@ function tabUeberblick(d){
     ${d.vereinbarung?`<div class="fld"><label for="f-verein">Vereinbarung (frei bearbeitbar)</label><textarea id="f-verein" class="brief" data-f="vereinbarung"${S.canWrite?"":" disabled"}>${esc(d.vereinbarung)}</textarea></div>`:""}
   </div>`;
 }
+/* ---------- Grafiken nach „90 Tage dranbleiben“ ---------- */
+const TSCORE={ja:3,teil:1.5,nein:0};
+function umsetzung(d){const st=held(d).filter(s=>s.transferStatus).slice(-3).map(s=>TSCORE[s.transferStatus]);if(!st.length)return null;const a=st.reduce((x,y)=>x+y,0)/st.length;return a>=2.5?"sitzt":a>=1.5?"wird":a>=.75?"wackelt":"hakt"}
+function umsetzSpark(d){
+  const all=held(d),hs=all.map((s,i)=>({s,n:i+1})).filter(x=>x.s.transfer).slice(-12);if(!hs.length)return "";
+  const cw=26,h=46,W=12*cw;let o=`<svg class="spark" viewBox="0 0 ${W} ${h+16}" role="img" aria-label="Umsetzung der Vereinbarungen aus den letzten ${hs.length} Sitzungen">`;
+  hs.forEach((x,i)=>{const X=i*cw+3,w=cw-6,st=x.s.transferStatus,v=st==="ja"?3:st==="teil"?2:st==="nein"?0:null;
+    o+=`<rect class="bg" x="${X}" y="0" width="${w}" height="${h}" rx="4"/>`;
+    if(v!=null){const bh=8+v*(h-8)/3;o+=`<rect class="b${v}" x="${X}" y="${h-bh}" width="${w}" height="${bh}" rx="4"><title>S${x.n}: ${esc((TSTAT.find(t=>t[0]===st)||["",""])[1])}</title></rect>`}
+    else if(i===hs.length-1)o+=`<rect class="now" x="${X-1.5}" y="-1" width="${w+3}" height="${h+2}" rx="5"><title>S${x.n}: läuft gerade</title></rect>`;
+    else o+=`<circle class="miss" cx="${X+w/2}" cy="${h-7}" r="3.5"><title>S${x.n}: nicht nachgefragt</title></circle>`;
+    o+=`<text x="${X+w/2}" y="${h+13}" text-anchor="middle">S${x.n}</text>`});
+  return o+`</svg><div class="legend" aria-hidden="true"><span><i style="background:var(--s3)"></i>Umgesetzt</span><span><i style="background:var(--s2)"></i>Teilweise</span><span><i style="background:var(--s0)"></i>Nicht umgesetzt</span><span><i style="border:1.5px dashed var(--ink-2)"></i>läuft</span></div>`;
+}
+function umsetzBlock(d){
+  const sp=umsetzSpark(d);if(!sp)return "";const u=umsetzung(d);
+  return `<div class="sec"><h3>Umsetzung der Vereinbarungen${u?` <span class="tag ut-${u}">${u}</span>`:""}</h3>${sp}
+    <p class="hint">Jede Säule ist eine Vereinbarung und zeigt, was in der Sitzung danach daraus geworden ist. Die Einschätzung bezieht sich auf die letzten drei.${u==="hakt"||u==="wackelt"?" Wenn es über mehrere Sitzungen hakt, ist das kein Versagen, sondern ein Hinweis: Passt die Vereinbarung zum Alltag?":""}</p></div>`;
+}
+function gasSpark(t){
+  const v=(t.verlauf||[]).slice(-12);if(!v.length)return "";
+  const cw=34,h=50,W=Math.max(v.length,10)*cw,yz=h-8-(2)*(h-8)/4;
+  let o=`<svg class="spark" viewBox="0 0 ${W} ${h+16}" role="img" aria-label="Verlauf der Zielerreichung">`;
+  v.forEach((x,i)=>{const X=i*cw+4,w=cw-8,lv=x.wert+2,bh=8+lv*(h-8)/4,c=x.wert<0?1:x.wert===0?2:3;
+    o+=`<rect class="bg" x="${X}" y="0" width="${w}" height="${h}" rx="4"/><rect class="b${c}" x="${X}" y="${h-bh}" width="${w}" height="${bh}" rx="4"><title>${esc(fmtShort(x.datum))}: ${gasLbl(x.wert)}</title></rect>`;
+    o+=`<text x="${X+w/2}" y="${h+13}" text-anchor="middle">${gasLbl(x.wert)}</text>`});
+  return o+`<line class="zl" x1="0" x2="${W}" y1="${yz}" y2="${yz}"/></svg><p class="hint">Gestrichelt: das vereinbarte Ergebnis (0). ${v.length>1?esc(fmtShort(v[0].datum))+" bis "+esc(fmtShort(v[v.length-1].datum)):esc(fmtShort(v[0].datum))}</p>`;
+}
+function prozessBalken(d){
+  if(laufend(d)){
+    const st=(d.standorte||[]).map(x=>x.datum).sort().pop(),hs=held(d),ref=st||(hs[0]&&hs[0].datum)||(d.phaseSeit||{})[4];if(!ref)return "";
+    const day=Math.max(1,1-daysFrom(ref)),dd=Math.min(day,90),pct=dd/90*100;
+    let tr=`<div class="track" aria-hidden="true"><div class="fill" style="width:${pct}%"></div>`;
+    hs.forEach(s=>{const t=-daysFrom(ref)+daysFrom(s.datum)+1;if(t>=1&&t<=90)tr+=`<span class="mk past" style="left:${(t-.5)/90*100}%"></span>`});
+    [[30,"Tag 30"],[60,"Tag 60"]].forEach(m=>{tr+=`<span class="mkl" style="left:${m[0]/90*100}%">${m[1]}</span>`});
+    tr+=`<span class="mk goal${day>=90?" past":""}" style="left:100%"></span><span class="mkt" style="left:96%">Standort</span></div>`;
+    return `<div class="sec"><div class="day"><b>Tag ${day}</b><span>${day>90?"seit der letzten Standortbestimmung. Zeit für eine neue.":"von 90 seit "+(st?"der letzten Standortbestimmung":"Beginn der Begleitung")}</span></div>${tr}</div>`;
+  }
+  const plan=planOf(d);if(!plan)return "";
+  const n=held(d).length,half=Math.ceil(plan/2);
+  let tr=`<div class="track" aria-hidden="true"><div class="fill" style="width:${Math.min(n,plan)/plan*100}%"></div>`;
+  for(let i=1;i<=plan;i++){const l=(i-.5)/plan*100;tr+=`<span class="mk${i<=n?" past":""}${i===plan?" goal":""}" style="left:${l}%"></span>`;if(i===1||i===plan||i===half)tr+=`<span class="mkl" style="left:${Math.max(4,Math.min(96,l))}%">S${i}</span>`}
+  tr+=`<span class="mkt" style="left:${Math.max(8,(half-.5)/plan*100)}%">Zwischenbilanz</span><span class="mkt" style="left:${Math.min(92,(plan-.5)/plan*100)}%">Abschluss</span></div>`;
+  return `<div class="sec"><div class="day"><b>Sitzung ${Math.min(n+1,plan)}</b><span>von ${plan}${n>=plan?" · Kontingent aufgebraucht":n+1===half?" · Zeit für die Zwischenbilanz":""}</span></div>${tr}</div>`;
+}
 function transferBox(d){
   const l=lastTransferOpen(d);if(!l||!S.canWrite)return "";
   return `<div class="tloop"><span class="ph">Letzte Vereinbarung · ${esc(fmtShort(l.datum))}</span>
@@ -792,8 +863,10 @@ function tabVorbereitung(d){
   let rare="";if(withFk.length>=2){const c=FAKTOREN.map(([k,lb])=>[lb,withFk.filter(s=>s.faktoren.includes(k)).length]),m=Math.min(...c.map(x=>x[1]));rare=c.filter(x=>x[1]===m).map(x=>x[0]).join(", ")+" ("+m+" von "+withFk.length+")"}
   const kar=(d.karussell||[]).filter(k=>k.wer||k.erwartung);
   const li=(lb,v)=>v?`<li><span class="lbl">${lb}:</span> ${esc(v)}</li>`:"";
-  return `<p class="hint">Sitzung ${hs.length+1}${plan?" von "+plan:""}${d.naechsterTermin?" · "+esc(fmtDT(d.naechsterTermin)):""}. Alles Wichtige auf einen Blick, für die zwei Minuten vor dem Termin.</p>
+  const pb=prozessBalken(d);
+  return `${pb}<p class="hint">${pb?"":"Sitzung "+(hs.length+1)+(plan?" von "+plan:"")}${d.naechsterTermin?(pb?"":" · ")+"Nächster Termin: "+esc(fmtDT(d.naechsterTermin)):""}. Alles Wichtige auf einen Blick, für die zwei Minuten vor dem Termin.</p>
   ${transferBox(d)}
+  ${umsetzBlock(d)}
   ${themenBlock(d)}
   <div class="sec"><h3>Wohin</h3>
     ${d.ziel?`<p class="lead">${esc(d.ziel)}</p>`:`<p class="hint">Noch kein Zielbild eingetragen.</p>`}
@@ -863,7 +936,7 @@ function gasBlock(d){
       <div class="fld"><label for="gt-${esc(t.id)}">Teilziel</label><input id="gt-${esc(t.id)}" data-gas="${esc(t.id)}" data-gf="titel" value="${esc(t.titel)}"${dis}></div>
       <details${st[0]?"":" open"}><summary>Stufen beschreiben${st[0]?" ✓":""}</summary><div class="gas-st">${GAS.map(([g,l,txt])=>`<div class="fld"><label for="gs-${esc(t.id)}-${g}">${l} · ${txt}</label><input id="gs-${esc(t.id)}-${g}" data-gas="${esc(t.id)}" data-gf="${g}" value="${esc(st[g])}" placeholder="${g===0?"Woran merkt man es konkret?":g===-1||g===-2?"z. B. die heutige Lage":""}"${dis}></div>`).join("")}</div></details>
       <div class="row-inline"><span class="ph">Stand heute</span><span class="seg" role="group" aria-label="Stand ${esc(t.titel)}">${GAS.map(([g,l])=>`<button type="button" class="gv${cur===g?" on":""}" data-gasset="${esc(t.id)}" data-gv="${g}" title="${esc(st[g]||"")}" aria-pressed="${cur===g}"${dis}>${l}</button>`).join("")}</span></div>
-      ${v.length?`<p class="hint">Verlauf: ${v.map(x=>esc(fmtShort(x.datum))+" "+gasLbl(x.wert)).join(" → ")}</p>`:""}
+      ${gasSpark(t)}
       ${S.canWrite?(S.confirmSess==="g:"+t.id?`<span class="confirm">Teilziel löschen? <button class="btn small red" data-gasdel-yes="${esc(t.id)}" type="button">Ja</button><button class="btn small ghost" data-sdel-no type="button">Nein</button></span>`:`<div><button class="linkish" data-gasdel="${esc(t.id)}" type="button">Teilziel löschen</button></div>`):""}
     </div>`}).join("")}
     ${S.canWrite?`<div class="row-inline"><div class="fld" style="flex:1;min-width:200px"><label for="gas-neu">Neues Teilziel</label><input id="gas-neu" placeholder="z. B. Kundenbetreuung liegt bei zwei Senior-Leuten"></div><button class="btn small" data-act="gas-add" type="button">Hinzufügen</button></div>`:""}
@@ -957,7 +1030,7 @@ function tabEntwicklung(d){
   const vals=[];if(d.startwert!==""&&d.startwert!=null)vals.push(+d.startwert);
   sessions(d).forEach(s=>{if(s.skala!==""&&s.skala!=null)vals.push(+s.skala)});
   const st=vals[0],cur=vals[vals.length-1],delta=vals.length>1?cur-st:null;
-  return `${laufend(d)?standortBlock(d):""}${gasBlock(d)}<div class="sec"><h3>Entwicklung auf der Skala</h3>
+  return `${prozessBalken(d)}${laufend(d)?standortBlock(d):""}${umsetzBlock(d)}${gasBlock(d)}<div class="sec"><h3>Entwicklung auf der Skala</h3>
     <p class="hint">„Auf einer Skala von 0 bis 10: Wo stehen Sie heute mit Ihrem Anliegen?“ Startwert aus dem Kontrakt, dann ein Wert pro Sitzung.</p>
     <div class="kpis">
       <div class="stat"><span class="n">${st!=null?st:"–"}</span><span class="l">Start</span></div>
