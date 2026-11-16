@@ -200,6 +200,8 @@ function weekLabel(t,n){var a=weekStart(t,n),b=add(a,n===WEEKS?DAYS-1-(n-1)*7:6)
 function active(t){return t.v.filter(function(v){return v.status!=="pause"&&v.status!=="fertig"})}
 function phaseOf(day){for(var i=0;i<PHASEN.length;i++)if(day<=PHASEN[i][1])return i;return 2}
 function kontakt(t){var k=t.cfg.kontakt||{};return {name:k.name||KONTAKT.name,mail:k.mail||KONTAKT.mail,tel:k.tel||KONTAKT.tel}}
+function hueter(t){return {wer:typeof t.hueter==="string"?t.hueter:t.cfg.hueter,wann:typeof t.wann==="string"?t.wann:t.cfg.wann}}
+function hueterZeile(t){var h=hueter(t);return h.wer?"Hüter des Rückblicks: "+h.wer+(h.wann?" ("+h.wann+")":""):""}
 function vorname(n){return String(n||"").split(" ")[0]}
 
 /* ---------- Codes ---------- */
@@ -208,7 +210,7 @@ function unpack(b64){var bin=atob(b64),a=new Uint8Array(bin.length);for(var i=0;
 function cleanCfg(c){
   c=c||{};var k=c.kontakt||{};
   return {id:str(c.id,20)||uid(),team:str(c.team,120),org:str(c.org,120),start:/^\d{4}-\d{2}-\d{2}$/.test(c.start)?c.start:iso(today()),
-    gruss:str(c.gruss,1500),kontakt:{name:str(k.name,80),mail:str(k.mail,120),tel:str(k.tel,40)},
+    gruss:str(c.gruss,1500),hueter:str(c.hueter,200),wann:str(c.wann,120),kontakt:{name:str(k.name,80),mail:str(k.mail,120),tel:str(k.tel,40)},
     termine:(Array.isArray(c.termine)?c.termine:[]).slice(0,8).map(function(x){return {tag:Math.max(1,Math.min(DAYS,parseInt(x&&x.tag,10)||1)),titel:str(x&&x.titel,120)}}),
     vereinbarungen:(Array.isArray(c.vereinbarungen)?c.vereinbarungen:[]).slice(0,8).map(function(x){return {id:str(x&&x.id,20)||uid(),text:str(x&&x.text,300),woran:str(x&&x.woran,400),wer:str(x&&x.wer,120)}}).filter(function(x){return x.text})};
 }
@@ -241,7 +243,7 @@ function scoreName(n){return n==null?"keine Angabe":SKALA[n][1]}
 function textWoche(t,n){
   var w=t.wochen[n]||{},L=[];
   L.push("Wochenrückblick, Woche "+n+" von "+WEEKS+" ("+weekLabel(t,n)+")");
-  L.push((t.cfg.team||"Team")+(t.cfg.org?", "+t.cfg.org:""));L.push("");
+  L.push((t.cfg.team||"Team")+(t.cfg.org?", "+t.cfg.org:""));if(hueterZeile(t))L.push(hueterZeile(t));L.push("");
   L.push("Wie gut haben wir unsere Vereinbarungen gelebt?");
   t.v.forEach(function(v){if(v.status==="pause"||v.status==="fertig")return;L.push("- "+v.text+": "+scoreName(w.werte&&w.werte[v.id]))});
   if(w.geholfen)L.push("","Was hat geholfen:",w.geholfen);
@@ -254,7 +256,7 @@ function avg(t,vid,from,to){var s=0,n=0;for(var i=from;i<=to;i++){var w=t.wochen
 function textStand(t){
   var day=dayOf(t),wk=weekOf(day),L=[];
   L.push("Zwischenstand nach "+Math.max(0,Math.min(DAYS,day))+" von 90 Tagen");
-  L.push((t.cfg.team||"Team")+(t.cfg.org?", "+t.cfg.org:""));L.push("");
+  L.push((t.cfg.team||"Team")+(t.cfg.org?", "+t.cfg.org:""));if(hueterZeile(t))L.push(hueterZeile(t));L.push("");
   t.v.forEach(function(v){
     var a=avg(t,v.id,1,wk),r=avg(t,v.id,Math.max(1,wk-2),wk);
     L.push("- "+v.text+(v.status!=="aktiv"?" ("+statusName(v.status)+")":""));
@@ -274,7 +276,9 @@ function einladung(cfg){
   L.push("So geht’s:");
   if(DB.appLink)L.push("1. App öffnen: "+DB.appLink);else L.push("1. Die angehängte Datei öffnen (am besten im Browser, nicht in der Vorschau).");
   L.push("2. Auf „Startcode einlesen“ tippen und diesen Code einfügen:","",startCode(cfg),"");
-  L.push("Eure Einträge bleiben auf eurem Gerät. Mir schickt ihr nur, was ihr teilen möchtet. Am besten füllt eine Person den Rückblick gemeinsam mit euch im Teammeeting aus.","");
+  if(cfg.hueter)L.push("Hüter des Rückblicks, wie im Workshop vereinbart: "+cfg.hueter+(cfg.wann?". Zurückgeschaut wird "+cfg.wann:"")+". Hüten heißt: daran erinnern, Raum dafür schaffen und festhalten. Bewerten und nachsteuern tut ihr gemeinsam.","");
+  else L.push("Legt fest, wer den Rückblick hütet: eine Person oder ein kleines Hüter-Team, das daran erinnert und festhält. Bewerten und nachsteuern tut ihr gemeinsam.","");
+  L.push("Eure Einträge bleiben auf eurem Gerät. Mir schickt ihr nur, was ihr teilen möchtet. Füllt den Rückblick am besten auf dem Gerät eurer Hüter aus, damit alles an einem Ort bleibt.","");
   L.push("Ich freue mich auf die nächsten 90 Tage mit euch.",k);
   return L.join("\n");
 }
@@ -284,13 +288,13 @@ function makeDemo(){
   var start=add(today(),-44);
   var cfg=cleanCfg({id:"beispiel",team:"Führungsteam Kundenservice",org:"Nordwerk GmbH (fiktives Beispiel)",start:iso(start),
     gruss:"Im Workshop habt ihr drei Vereinbarungen getroffen. Hier bleibt ihr 90 Tage dran: einmal pro Woche kurz zurückschauen, ehrlich bewerten und, wo nötig, nachsteuern.",
-    kontakt:{},
+    hueter:"Jana und Tom, ab Tag 46 Mehmet und Lisa",wann:"montags im Teammeeting, 10 Minuten",kontakt:{},
     termine:[{tag:1,titel:"Workshop und Start"},{tag:30,titel:"Zwischenstand mit Sascha (60 Min., online)"},{tag:60,titel:"Nachjustieren (halber Tag)"},{tag:90,titel:"Abschlussrückblick"}],
     vereinbarungen:[
       {id:"a1",text:"Jedes Meeting endet mit: Wer macht was bis wann?",woran:"Im Protokoll steht zu jedem Punkt ein Name und ein Datum.",wer:"Wechselnde Moderation"},
       {id:"a2",text:"Irritationen sprechen wir innerhalb von 48 Stunden direkt an.",woran:"Weniger Flurgespräche, Konflikte kommen nicht erst im Jahresgespräch auf den Tisch.",wer:"Alle"},
       {id:"a3",text:"Montags 15 Minuten Prioritäten-Abgleich im Stehen.",woran:"Doppelarbeit und Last-Minute-Anfragen werden seltener.",wer:"Jana"}]});
-  var t=applyCfg(cfg,true);t.wochen={};t.log=[];
+  var t=applyCfg(cfg,true);t.wochen={};t.log=[];delete t.hueter;delete t.wann;
   var W=[[[1,0,2],"Die Moderationskarte am Bildschirm hat erinnert.","Zwei Krankheitsfälle, Montagsrunde ausgefallen.","Montagsrunde fest im Kalender als Serientermin."],
     [[2,0,1],"Serientermin wirkt.","Niemand wollte als Erster eine Irritation ansprechen.","Im nächsten Meeting üben wir es an einem kleinen Beispiel."],
     [[2,1,1],"Tom hat vorgemacht, wie man es freundlich anspricht.","Die Montagsrunde wird zur Statusrunde und dauert 40 Minuten.","Timer stellen, nur Prioritäten, kein Status."],
@@ -357,13 +361,21 @@ function vStart(t){
     return '<div class="li'+(v.status!=="aktiv"?" off":"")+'"><div class="t"><b>'+esc(v.text)+'</b>'+(v.woran?'<span>Woran wir es merken: '+esc(v.woran)+'</span>':'')+(v.wer?'<span>Kümmert sich: '+esc(v.wer)+'</span>':'')+'</div>'+tag+'</div>'}).join("");
   return head(t.cfg.org||"90 Tage dranbleiben",esc(t.cfg.team||"Euer Team"),t.cfg.gruss)+demoNote(t)+storeNote()+
    '<section class="sec"><div class="card">'+big+timeline(t)+
-   '<div class="phase">'+PHASEN.map(function(p,i){return '<div class="'+(i===ph&&day>=1&&day<=DAYS?"on":"")+'"><b>'+p[2]+'</b>Tag '+p[0]+' bis '+p[1]+'. '+p[3]+'</div>'}).join("")+'</div></div>'+cta+'</section>'+
+   '<div class="phase">'+PHASEN.map(function(p,i){return '<div class="'+(i===ph&&day>=1&&day<=DAYS?"on":"")+'"><b>'+p[2]+'</b>Tag '+p[0]+' bis '+p[1]+'. '+p[3]+'</div>'}).join("")+'</div></div>'+cta+hueterCard(t)+'</section>'+
    '<section class="sec"><h2>Unsere Vereinbarungen</h2><div class="card"><div class="list">'+(agr||'<p class="hint">Noch keine Vereinbarungen eingetragen.</p>')+'</div><p class="hint">Die Einschätzung rechts bezieht sich auf die letzten drei Wochen.</p></div></section>'+
    (term?'<section class="sec"><h2>Gemeinsame Termine</h2><div class="card"><div class="list">'+term+'</div></div></section>':'')+
    '<section class="sec"><h2>Eure Begleitung</h2><div class="card"><p><b>'+esc(k.name)+'</b></p><p class="hint">Wenn etwas hakt, meldet euch, nicht erst zum nächsten Termin.</p><div class="row">'+
     (k.mail?'<a class="btn two small" href="mailto:'+esc(k.mail)+'">'+esc(k.mail)+'</a>':'')+(k.tel?'<a class="btn two small" href="tel:'+esc(k.tel.replace(/\s/g,""))+'">'+esc(k.tel)+'</a>':'')+'</div></div></section>'+foot();
 }
 
+function hueterCard(t){
+  var h=hueter(t);
+  if(UI.hEdit)return '<div class="card"><h3>Hüter des Rückblicks</h3><p class="hint">Eine Person oder ein kleines Hüter-Team. Sie erinnern, schaffen Raum und halten fest. Bewertet wird gemeinsam.</p>'+
+    fld("h-w","Wer hütet gerade?",h.wer,'data-h="hueter"',false,"z. B. Jana und Tom")+fld("h-d","Wann schauen wir zurück?",h.wann,'data-h="wann"',false,"z. B. montags im Teammeeting")+
+    '<div class="row"><button class="btn small" data-act="h-done">Fertig</button></div></div>';
+  return '<div class="card"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><span class="eyebrow">Hüter des Rückblicks</span><p style="font:500 21px/1.25 var(--display);margin-top:4px">'+(h.wer?esc(h.wer):'Noch nicht festgelegt')+'</p>'+(h.wann?'<p class="hint">Rückblick '+esc(h.wann)+'</p>':'')+'</div><button class="link" data-act="h-edit">Ändern</button></div>'+
+    (h.wer?'':'<p class="hint">Legt fest, wer den Rückblick wachhält. Ohne Hüter versandet er meistens in Woche drei.</p>')+'</div>';
+}
 function vRueck(t){
   var day=dayOf(t),cur=weekOf(day),n=UI.week||cur;if(n>cur&&day>=1)n=cur;
   var w=t.wochen[n]||{},maxW=day<1?1:Math.min(WEEKS,cur),k=kontakt(t);
@@ -372,7 +384,7 @@ function vRueck(t){
     var cur=w.werte&&w.werte[v.id];
     return '<div class="agr"><p class="txt">'+esc(v.text)+'</p>'+(v.woran?'<p class="meta">Woran wir es merken: '+esc(v.woran)+'</p>':'')+
      '<div class="chips scale" role="group" aria-label="Wie gut gelebt">'+SKALA.map(function(s){return '<button class="chip" data-score="'+esc(v.id)+'" data-v="'+s[0]+'" aria-pressed="'+(cur===s[0])+'">'+s[1]+'</button>'}).join("")+'</div></div>'}).join("");
-  return head("Woche "+n+" von "+WEEKS+" · "+weekLabel(t,n),"Wochen<em>rückblick</em>","Zehn Minuten, am besten gemeinsam im Teammeeting. Ehrlich ist wichtiger als gut.")+demoNote(t)+
+  return head("Woche "+n+" von "+WEEKS+" · "+weekLabel(t,n),"Wochen<em>rückblick</em>",(hueter(t).wer?"Hüter: "+hueter(t).wer+". ":"")+"Zehn Minuten, am besten gemeinsam im Teammeeting. Ehrlich ist wichtiger als gut.")+demoNote(t)+
    '<section class="sec">'+sel+'</section>'+
    '<section class="sec"><h2>Wie gut haben wir das gelebt?</h2><div class="card">'+(qs||'<p class="hint">Gerade sind alle Vereinbarungen pausiert oder Routine. Ihr könnt sie im Verlauf wieder aktivieren.</p>')+'</div></section>'+
    '<section class="sec"><h2>Was wir mitnehmen</h2><div class="card">'+
@@ -439,7 +451,7 @@ function vSichern(t){
 }
 
 /* ---------- Begleiter-Bereich ---------- */
-function newDraft(){return {id:uid(),team:"",org:"",start:iso(add(today(),1)),gruss:"Im Workshop habt ihr gemeinsam Vereinbarungen getroffen. Hier bleibt ihr 90 Tage dran: einmal pro Woche kurz zurückschauen, ehrlich bewerten und, wo nötig, nachsteuern.",kontakt:{name:KONTAKT.name,mail:KONTAKT.mail,tel:KONTAKT.tel},
+function newDraft(){return {id:uid(),team:"",org:"",start:iso(add(today(),1)),gruss:"Im Workshop habt ihr gemeinsam Vereinbarungen getroffen. Hier bleibt ihr 90 Tage dran: einmal pro Woche kurz zurückschauen, ehrlich bewerten und, wo nötig, nachsteuern.",hueter:"",wann:"im wöchentlichen Teammeeting",kontakt:{name:KONTAKT.name,mail:KONTAKT.mail,tel:KONTAKT.tel},
   termine:[{tag:1,titel:"Workshop und Start"},{tag:30,titel:"Zwischenstand (online)"},{tag:60,titel:"Nachjustieren"},{tag:90,titel:"Abschlussrückblick"}],
   vereinbarungen:[{id:uid(),text:"",woran:"",wer:""},{id:uid(),text:"",woran:"",wer:""},{id:uid(),text:"",woran:"",wer:""}]}}
 function vCoach(){
@@ -464,6 +476,8 @@ function vCoach(){
     fld("c-start","Tag 1 der 90 Tage",d.start,'data-c="start"',false,"","date")+
     fld("c-gruss","Begrüßung",d.gruss,'data-c="gruss"',true,"")+'</div></section>'+
    '<section class="sec"><h2>Vereinbarungen aus dem Workshop</h2><div class="card">'+V+(d.vereinbarungen.length<8?'<div class="row"><button class="btn two small" data-act="v-add">Vereinbarung hinzufügen</button></div>':'')+'<p class="hint">Drei sind meistens genug. Lieber wenige, die wirklich gelebt werden.</p></div></section>'+
+   '<section class="sec"><h2>Hüter des Rückblicks</h2><div class="card"><p class="hint">Im Workshop festlegen: Wer hält den Rückblick wach? Eine Person oder ein kleines Hüter-Team, gern rotierend. Hüten heißt erinnern, Raum schaffen, festhalten. Bewertet wird gemeinsam. Das Team kann die Hüter später selbst ändern.</p><div class="grid2">'+
+    fld("c-h","Wer hütet?",d.hueter,'data-c="hueter"',false,"z. B. Jana und Tom, monatlich wechselnd")+fld("c-w","Wann wird zurückgeschaut?",d.wann,'data-c="wann"',false,"z. B. montags im Teammeeting")+'</div></div></section>'+
    '<section class="sec"><h2>Gemeinsame Termine</h2><div class="card">'+Tm+'<div class="row"><button class="btn two small" data-act="t-add">Termin hinzufügen</button></div></div></section>'+
    '<section class="sec"><h2>Kontakt</h2><div class="card"><div class="grid2">'+fld("k-n","Name",d.kontakt.name,'data-k="name"',false,"")+fld("k-m","E-Mail",d.kontakt.mail,'data-k="mail"',false,"","email")+fld("k-t","Telefon",d.kontakt.tel,'data-k="tel"',false,"","tel")+'</div></div></section>'+
    '<section class="sec"><h2>Verschicken</h2><div class="card">'+
@@ -513,7 +527,7 @@ function render(keepScroll){
   $("#nav").innerHTML=nav.length?'<div class="nav-in">'+nav.map(function(n){return '<button type="button" data-go="'+n[0]+'"'+(n[0]===cur?' aria-current="page"':'')+'>'+n[1]+'</button>'}).join("")+'</div>':"";
   if(!keepScroll)scrollTo(0,0);
 }
-function go(v){UI.view=v;UI.steer=null;UI.confirm=null;render()}
+function go(v){UI.hEdit=false;UI.view=v;UI.steer=null;UI.confirm=null;render()}
 
 /* ---------- Ereignisse ---------- */
 document.addEventListener("click",function(e){
@@ -550,6 +564,8 @@ document.addEventListener("click",function(e){
       else if(sd.art==="fertig"){v.status="fertig";txt="„"+alt+"“ ist Routine geworden"}
       else{var was=v.status;v.status="aktiv";txt=was!=="aktiv"?"„"+alt+"“ wieder aufgenommen":"„"+alt+"“ bewusst beibehalten"}
       t.log.push({datum:iso(today()),vid:v.id,art:sd.art,text:txt,notiz:String(sd.notiz||"").trim()});UI.steer=null;UI.steerDraft=null;save();render(true);break;
+    case "h-edit":UI.hEdit=true;render(true);break;
+    case "h-done":UI.hEdit=false;save();render(true);break;
     case "del":UI.confirm="del";render(true);break;
     case "del-no":UI.confirm=null;render(true);break;
     case "del-yes":delete DB.teams[DB.cur];DB.cur=null;UI.confirm=null;save();go("start");break;
@@ -571,6 +587,7 @@ document.addEventListener("click",function(e){
 document.addEventListener("input",function(e){
   var el=e.target,t=T(),d=el.dataset;
   if(d.w&&t){var n=UI.week||weekOf(dayOf(t)),w=t.wochen[n]=t.wochen[n]||{};w[d.w]=el.value.slice(0,2000);save();return}
+  if(d.h&&t){t[d.h]=el.value.slice(0,200);save();return}
   if(d.sd){UI.steerDraft=UI.steerDraft||{art:"",text:"",notiz:""};UI.steerDraft[d.sd]=el.value;return}
   if(d.app){DB.appLink=el.value.trim();save();return}
   if(!UI.draft)return;
