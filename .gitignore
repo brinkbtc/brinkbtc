@@ -1,0 +1,8 @@
+
+# Persönliche Steuer- und Finanzunterlagen niemals committen
+*.pdf
+*.PDF
+unterlagen/
+belege/
+steuer-privat/
+*.xml.private
