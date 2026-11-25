@@ -17,6 +17,11 @@ Ich nutze heute eine kleine Lexware-Version. Ich möchte davon unabhängig werde
 Bekannte Eckdaten (im Interview nur noch bestätigen):
 - Meine Coachings rechne ich mit Umsatzsteuer ab. Die Umsatzsteuer-Voranmeldung mache ich quartalsweise selbst über ELSTER. Den letzten Klick in ELSTER mache ich gern selbst.
 - Meine Frau ist nebenberuflich als Lehrbeauftragte bzw. Dozentin für eine Universität und die VHS tätig. Wir werden zusammen veranlagt.
+- Mein Business heißt seit 2026 „Brink FokusMensch" (neue Ausrichtung, neue Website). Rechnungsdesign und Absenderdaten entsprechend.
+- Ist-Versteuerung (§ 20 UStG). Bisher melde ich in den Voranmeldungen keine Vorsteuer an, die kommt erst mit der Jahreserklärung zurück. Die App soll Vorsteuer laufend im richtigen Quartal berücksichtigen.
+- Heute schreibe ich nur die Rechnungen in Lexware. Belege sammle ich bis Jahresende in einem Ordner, der Steuerberater bucht (DATEV, SKR04) und erstellt EÜR, USt- und ESt-Erklärungen. Ziel: laufende Buchhaltung in der App, SKR04-kompatible Kategorien, DATEV-Export für die Übergabe.
+- Ein Pkw steht im Betriebsvermögen (Privatnutzung pauschal). Fahrten zu Kunden, gelegentlich Dienstreisen. Meine Angestelltentätigkeit findet seit 2026 überwiegend in Hamburg statt, gelegentlich in Berlin.
+- Offene Grundsatzfrage: Rolle des Steuerberaters künftig (alles, nur Abschluss/Erklärungen oder gar nicht).
 - Ausbaustufe: Die App startet für mich. Das Datenmodell ist aber von Anfang an als Haushalt mit zwei Personen angelegt (jede Einnahme und Ausgabe gehört zu einer Person und einer Tätigkeit), damit wir die Tätigkeit meiner Frau später ohne Umbau ergänzen können und zum Jahresende beide Anlagen S, beide Anlagen N und die gemeinsame Erklärung vorbereitet werden können.
 
 ## Rechtliche Leitplanken, die du immer im Kopf behältst
