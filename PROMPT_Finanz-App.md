@@ -14,6 +14,11 @@ Ich nutze heute eine kleine Lexware-Version. Ich möchte davon unabhängig werde
 4. meine Steuer vorbereiten: EÜR (Anlage EÜR), Anlage S, Anlage N aus meiner Arbeitnehmertätigkeit, ggf. Umsatzsteuer-Voranmeldung und Umsatzsteuererklärung,
 5. beide Welten zusammenführen: meine Arbeitnehmertätigkeit und meine freiberufliche Tätigkeit.
 
+Bekannte Eckdaten (im Interview nur noch bestätigen):
+- Meine Coachings rechne ich mit Umsatzsteuer ab. Die Umsatzsteuer-Voranmeldung mache ich quartalsweise selbst über ELSTER. Den letzten Klick in ELSTER mache ich gern selbst.
+- Meine Frau ist nebenberuflich als Lehrbeauftragte bzw. Dozentin für eine Universität und die VHS tätig. Wir werden zusammen veranlagt.
+- Ausbaustufe: Die App startet für mich. Das Datenmodell ist aber von Anfang an als Haushalt mit zwei Personen angelegt (jede Einnahme und Ausgabe gehört zu einer Person und einer Tätigkeit), damit wir die Tätigkeit meiner Frau später ohne Umbau ergänzen können und zum Jahresende beide Anlagen S, beide Anlagen N und die gemeinsame Erklärung vorbereitet werden können.
+
 ## Rechtliche Leitplanken, die du immer im Kopf behältst
 
 Prüfe diese Punkte zu Beginn gegen den aktuellen Rechtsstand (heute ist Ende 2026) und sag mir, wo sich etwas geändert hat:
@@ -56,6 +61,12 @@ Block C – Ausgaben, Belege, Bank
 Block D – Arbeitnehmertätigkeit
 - Welche Daten habe ich aus der Lohnsteuerbescheinigung? Welche Werbungskosten fallen an (Pendeln, Homeoffice-Pauschale, Arbeitsmittel, Fortbildung)?
 - Wie sauber trenne ich Kosten zwischen Arbeitnehmer- und freiberuflicher Tätigkeit?
+
+Block D2 – Tätigkeit meiner Frau (für die spätere Ausbaustufe, kurz halten)
+- Wie wird sie bezahlt: Honorarabrechnung durch Uni/VHS oder eigene Rechnungen?
+- Ungefähre Jahreseinnahmen, und wird die Übungsleiterpauschale (§ 3 Nr. 26 EStG) genutzt?
+- Ist sie zusätzlich angestellt? Welche Kosten fallen an (Fahrten, Material, Arbeitszimmer)?
+- Prüfe die Umsatzsteuerbefreiung für Unterrichtsleistungen an Hochschulen und Volkshochschulen (§ 4 Nr. 21 UStG) und ob sie Kleinunternehmerin ist.
 
 Block E – Lexware und Migration
 - Welche Lexware-Version nutze ich genau, und welche Daten will ich mitnehmen (Kunden, Artikel, Rechnungen, Belege, Nummernkreise)?
